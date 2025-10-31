@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <!-- Base wood color gradient -->
+    <linearGradient id="woodBase" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#4b3021"/>
+      <stop offset="50%" stop-color="#3a2519"/>
+      <stop offset="100%" stop-color="#2a1b12"/>
+    </linearGradient>
+
+    <!-- Wood grain pattern -->
+    <pattern id="woodGrain" width="200" height="40" patternUnits="userSpaceOnUse">
+      <rect width="200" height="40" fill="url(#woodBase)"/>
+
+      <!-- Horizontal grain lines -->
+      <path d="M0,8 Q50,6 100,8 T200,8" stroke="#1a0e09" stroke-width="0.8" fill="none" opacity="0.4"/>
+      <path d="M0,12 Q50,14 100,12 T200,12" stroke="#1a0e09" stroke-width="0.6" fill="none" opacity="0.3"/>
+      <path d="M0,20 Q50,18 100,20 T200,20" stroke="#5a3d2a" stroke-width="0.5" fill="none" opacity="0.2"/>
+      <path d="M0,25 Q50,27 100,25 T200,25" stroke="#1a0e09" stroke-width="0.7" fill="none" opacity="0.35"/>
+      <path d="M0,32 Q50,30 100,32 T200,32" stroke="#1a0e09" stroke-width="0.5" fill="none" opacity="0.25"/>
+
+      <!-- Wood knots and imperfections -->
+      <ellipse cx="45" cy="15" rx="8" ry="3" fill="#1a0e09" opacity="0.2"/>
+      <ellipse cx="130" cy="22" rx="6" ry="2.5" fill="#1a0e09" opacity="0.15"/>
+      <ellipse cx="175" cy="18" rx="5" ry="2" fill="#1a0e09" opacity="0.18"/>
+
+      <!-- Subtle highlights -->
+      <path d="M0,10 Q50,9 100,10 T200,10" stroke="#6b4a35" stroke-width="0.3" fill="none" opacity="0.15"/>
+      <path d="M0,28 Q50,27 100,28 T200,28" stroke="#6b4a35" stroke-width="0.3" fill="none" opacity="0.12"/>
+    </pattern>
+
+    <!-- Noise filter for texture -->
+    <filter id="noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed="1"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feBlend mode="multiply" in="SourceGraphic"/>
+    </filter>
+  </defs>
+
+  <rect width="200" height="200" fill="url(#woodGrain)"/>
+  <rect width="200" height="200" fill="url(#woodGrain)" filter="url(#noise)" opacity="0.08"/>
+</svg>

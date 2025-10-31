@@ -1,0 +1,65 @@
+/* Decorative shelf brackets */
+.shelf::before,
+.shelf::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 80px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.shelf::before {
+  left: 16px;
+  background-image: url('../../assets/decor/plant.svg');
+}
+
+.shelf::after {
+  right: 16px;
+  background-image: url('../../assets/decor/candle.svg');
+}
+
+.shelf:nth-child(2)::before {
+  background-image: url('../../assets/decor/crystal.svg');
+}
+
+.shelf:nth-child(2)::after {
+  background-image: url('../../assets/decor/herb.svg');
+}
+
+.shelf:nth-child(3)::before {
+  background-image: url('../../assets/decor/moon.svg');
+}
+
+.shelf:nth-child(3)::after {
+  background-image: url('../../assets/decor/star.svg');
+}
+
+/* Magical cursor pulse */
+@keyframes cursorPulse {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.15); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+#magic-cursor { animation: cursorPulse 2s ease-in-out infinite; }
+
+/* HUD panel look */
+.hud {
+  border-bottom: 1px solid rgba(200,164,82,0.25);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+}
+
+/* Modal buttons */
+#book-modal button {
+  background: var(--green-700);
+  color: var(--text-100);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 8px 12px;
+  border-radius: var(--radius-1);
+}
+#book-modal button:hover { background: var(--green-800); }

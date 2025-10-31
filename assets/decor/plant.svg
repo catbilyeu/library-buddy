@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Pot -->
+  <path d="M20 42 L18 52 Q18 54 20 54 L44 54 Q46 54 46 52 L44 42 Z" fill="#8B6F47" stroke="#5d4a2f" stroke-width="1.5"/>
+  <ellipse cx="32" cy="42" rx="12" ry="3" fill="#6d5639"/>
+  <path d="M24 46 L40 46" stroke="#5d4a2f" stroke-width="1" opacity="0.4"/>
+
+  <!-- Leaves -->
+  <path d="M32 42 Q28 35 24 28 Q23 25 25 24 Q27 23 28 26 Q30 32 32 38" fill="#4a7c59" stroke="#3a5f45" stroke-width="1.2"/>
+  <path d="M32 40 Q34 33 38 26 Q39 23 41 24 Q43 25 42 28 Q40 34 32 38" fill="#5a8c69" stroke="#4a7c59" stroke-width="1.2"/>
+  <path d="M32 38 Q30 32 28 26 Q27 23 29 22 Q31 21 32 24 Q33 30 32 36" fill="#3a6b4f" stroke="#2a5b3f" stroke-width="1.2"/>
+  <path d="M32 36 Q34 30 36 24 Q37 21 39 22 Q41 23 40 26 Q38 32 32 36" fill="#4a7c59" stroke="#3a6b4f" stroke-width="1.2"/>
+  <path d="M32 34 Q31 28 30 22 Q29 19 31 18 Q33 17 34 20 Q34 26 32 32" fill="#5a8c69" stroke="#4a7c59" stroke-width="1.2"/>
+
+  <!-- Highlights on leaves -->
+  <path d="M28 28 Q29 30 30 32" stroke="#6fa87d" stroke-width="0.8" opacity="0.6" stroke-linecap="round"/>
+  <path d="M36 26 Q36 28 36 30" stroke="#6fa87d" stroke-width="0.8" opacity="0.6" stroke-linecap="round"/>
+</svg>

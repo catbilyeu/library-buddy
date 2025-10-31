@@ -1,0 +1,9 @@
+{
+  "name": "home-library-catalog",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "npx serve .",
+    "lint": "npx eslint \"src/**/*.js\" --max-warnings=0 || true"
+  }
+}

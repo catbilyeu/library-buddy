@@ -1,0 +1,157 @@
+/* Wall background using the witchy bookshelf image */
+.library {
+  background:
+    linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)),
+    url('../../assets/bookshelf-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+/* Shelves - stacked vertically */
+.shelves {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-8);
+  padding-top: var(--space-6);
+}
+
+/* Shelf - transparent to show background image */
+.shelf {
+  background: rgba(0,0,0,0.15);
+  backdrop-filter: blur(1px);
+  border-radius: var(--radius-1);
+  box-shadow:
+    inset 0 2px 1px rgba(255,255,255,0.05),
+    inset 0 -2px 3px rgba(0,0,0,0.2),
+    0 8px 16px rgba(0,0,0,0.3);
+  min-height: 200px;
+  height: 200px;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 var(--space-6) var(--space-4);
+  gap: var(--space-2);
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: var(--space-4) 0;
+}
+
+/* Book tile - looks like a book spine */
+.book-tile {
+  flex-shrink: 0;
+  width: 48px;
+  height: 170px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: var(--space-3) var(--space-2);
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(
+    to right,
+    rgba(0,0,0,0.3) 0%,
+    rgba(255,255,255,0.1) 5%,
+    rgba(255,255,255,0.05) 50%,
+    rgba(0,0,0,0.2) 95%,
+    rgba(0,0,0,0.4) 100%
+  );
+  box-shadow:
+    inset -1px 0 2px rgba(0,0,0,0.3),
+    inset 1px 0 1px rgba(255,255,255,0.1),
+    2px 0 4px rgba(0,0,0,0.2);
+}
+
+.book-tile:hover {
+  transform: translateY(-8px);
+}
+
+.book-tile .spine {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px 2px 0 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.85;
+  z-index: 0;
+}
+
+.book-tile .title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-100);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  letter-spacing: 0.3px;
+  padding: var(--space-2) 0;
+}
+
+.book-tile .author {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.book-tile.highlight {
+  outline: 2px solid var(--accent-500);
+  outline-offset: 2px;
+  box-shadow:
+    inset -1px 0 2px rgba(0,0,0,0.3),
+    inset 1px 0 1px rgba(255,255,255,0.1),
+    0 0 0 4px rgba(139,216,189,0.2),
+    0 0 16px rgba(139,216,189,0.4);
+  transform: translateY(-8px);
+}
+
+/* Series badge */
+.book-tile .series-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(200,164,82,0.9);
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 3px;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Visual connection for series books */
+.book-tile[data-series] + .book-tile[data-series] {
+  margin-left: 2px;
+}
+
+/* First book in a series gets a subtle left indicator */
+.book-tile[data-series] {
+  position: relative;
+}
+
+.book-tile[data-series-number="1"]::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 10%;
+  bottom: 10%;
+  width: 2px;
+  background: rgba(200,164,82,0.5);
+  border-radius: 1px;
+}

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Candle body -->
+  <path d="M26 48 L26 28 Q26 26 28 26 L36 26 Q38 26 38 28 L38 48 Z" fill="#e8d4a8" stroke="#c8a452" stroke-width="1.5"/>
+  <ellipse cx="32" cy="48" rx="6" ry="2" fill="#c8a452"/>
+  <ellipse cx="32" cy="26" rx="6" ry="2" fill="#f0e6c8"/>
+
+  <!-- Wax drips -->
+  <path d="M30 32 Q29 35 29 38" stroke="#d8c498" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <path d="M34 36 Q35 39 35 42" stroke="#d8c498" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Wick -->
+  <line x1="32" y1="26" x2="32" y2="22" stroke="#2a2a2a" stroke-width="1.2"/>
+
+  <!-- Flame -->
+  <ellipse cx="32" cy="18" rx="3" ry="5" fill="#ffb347" opacity="0.8"/>
+  <ellipse cx="32" cy="17" rx="2" ry="4" fill="#ffd700" opacity="0.9"/>
+  <ellipse cx="32" cy="16" rx="1.5" ry="3" fill="#fff8dc" opacity="0.7"/>
+
+  <!-- Flame glow -->
+  <ellipse cx="32" cy="18" rx="6" ry="8" fill="#ffb347" opacity="0.15"/>
+</svg>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Library Buddy</title>
+  <link rel="stylesheet" href="../src/styles/variables.css">
+  <link rel="stylesheet" href="../src/styles/base.css">
+  <link rel="stylesheet" href="../src/styles/theme.css">
+  <link rel="stylesheet" href="../src/styles/components.css">
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="hud">
+      <h1>Library Buddy</h1>
+      <div class="controls">
+        <button data-action="start-scan">Scan Books</button>
+        <button data-action="browse-shelf">Browse Bookshelf</button>
+        <button data-action="stop">Stop</button>
+        <div class="filter-group">
+          <label for="sort-filter">Sort by:</label>
+          <select id="sort-filter">
+            <option value="series">Series</option>
+            <option value="author">Author (A-Z)</option>
+            <option value="genre">Genre</option>
+            <option value="color">Color</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <main class="library">
+      <section class="shelves" data-test-id="shelves" aria-label="Bookshelves"></section>
+
+      <section class="webcam-overlay hidden" data-test-id="webcam-overlay" aria-hidden="true">
+        <video id="webcam-video" autoplay playsinline muted></video>
+        <canvas id="overlay-canvas"></canvas>
+      </section>
+    </main>
+
+    <div id="magic-cursor" data-test-id="cursor" aria-hidden="true"></div>
+
+    <dialog id="book-modal" data-test-id="book-modal">
+      <article>
+        <img class="book-cover" alt="Book cover" />
+        <header>
+          <h2 class="book-title">Title</h2>
+          <p class="book-author">Author</p>
+        </header>
+        <footer>
+          <button id="close-modal">Close</button>
+          <button id="delete-book" class="delete-btn">Remove from Shelf</button>
+        </footer>
+      </article>
+    </dialog>
+  </div>
+
+  <script type="module" src="../src/js/app.js"></script>
+</body>
+</html>

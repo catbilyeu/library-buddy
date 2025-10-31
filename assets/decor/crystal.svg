@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Main crystal body -->
+  <path d="M32 12 L38 28 L36 48 L28 48 L26 28 Z" fill="#b8a8d8" stroke="#8b7bb8" stroke-width="1.5" stroke-linejoin="bevel"/>
+
+  <!-- Crystal facets -->
+  <path d="M32 12 L35 20 L32 28 L29 20 Z" fill="#d8c8f8" stroke="#8b7bb8" stroke-width="1" opacity="0.8"/>
+  <path d="M29 20 L32 28 L28 48" fill="#9885c8" stroke="#7865a8" stroke-width="1" opacity="0.6"/>
+  <path d="M35 20 L32 28 L36 48" fill="#a895d8" stroke="#8875b8" stroke-width="1" opacity="0.6"/>
+
+  <!-- Highlights -->
+  <path d="M30 16 L32 22" stroke="#f0e8ff" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+  <path d="M34 24 L35 30" stroke="#e8d8ff" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Base/stand -->
+  <ellipse cx="32" cy="48" rx="8" ry="2" fill="#3a3a4a" opacity="0.6"/>
+
+  <!-- Inner glow -->
+  <path d="M32 20 L34 30 L32 40 L30 30 Z" fill="#d8c8f8" opacity="0.3"/>
+</svg>
