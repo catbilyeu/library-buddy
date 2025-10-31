@@ -67,6 +67,29 @@ function normalizeBookFromIsbnJson(isbn, data, authorName) {
     }
   }
 
+  // Special handling for Harry Potter books
+  const title = data?.title || '';
+  if (!series && title.toLowerCase().includes('harry potter')) {
+    series = 'Harry Potter';
+    // Extract book number from common patterns
+    const hpPatterns = [
+      /philosopher'?s stone/i,
+      /sorcerer'?s stone/i,
+      /chamber of secrets/i,
+      /prisoner of azkaban/i,
+      /goblet of fire/i,
+      /order of the phoenix/i,
+      /half-blood prince/i,
+      /deathly hallows/i
+    ];
+    for (let i = 0; i < hpPatterns.length; i++) {
+      if (hpPatterns[i].test(title)) {
+        seriesNumber = i === 0 ? 1 : (i === 1 ? 1 : i); // Both philosopher's and sorcerer's stone are book 1
+        break;
+      }
+    }
+  }
+
   // Extract genre/subjects
   let genre = null;
   if (data?.subjects && data.subjects.length > 0) {
@@ -153,4 +176,33 @@ export function updateBookCover(book) {
 /** Get all alternative cover sources for an ISBN */
 export function getCoverAlternatives(isbn) {
   return getAlternateCoverSources(isbn);
+}
+
+/** Detect and extract series info from a book title (for migration/fixing existing books) */
+export function detectSeriesFromTitle(title) {
+  const titleLower = (title || '').toLowerCase();
+
+  // Harry Potter detection
+  if (titleLower.includes('harry potter')) {
+    const hpPatterns = [
+      { pattern: /philosopher'?s stone/i, number: 1 },
+      { pattern: /sorcerer'?s stone/i, number: 1 },
+      { pattern: /chamber of secrets/i, number: 2 },
+      { pattern: /prisoner of azkaban/i, number: 3 },
+      { pattern: /goblet of fire/i, number: 4 },
+      { pattern: /order of the phoenix/i, number: 5 },
+      { pattern: /half-blood prince/i, number: 6 },
+      { pattern: /deathly hallows/i, number: 7 }
+    ];
+
+    for (const { pattern, number } of hpPatterns) {
+      if (pattern.test(title)) {
+        return { series: 'Harry Potter', seriesNumber: number };
+      }
+    }
+
+    return { series: 'Harry Potter', seriesNumber: null };
+  }
+
+  return { series: null, seriesNumber: null };
 }

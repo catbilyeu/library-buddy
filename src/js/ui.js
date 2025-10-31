@@ -50,12 +50,15 @@ function getBookColor(bookId, title) {
   return colors[index];
 }
 
-export function renderBook(book) {
-  // Find a shelf with room (cycle through shelves)
-  const shelfEls = document.querySelectorAll('.shelf');
-  const bookCount = document.querySelectorAll('.book-tile').length;
-  const targetIndex = bookCount % shelfEls.length;
-  const target = shelfEls[targetIndex] || shelfEls[0] || shelves();
+export function renderBook(book, targetShelf = null) {
+  // Use provided shelf or find one by cycling through shelves
+  let target = targetShelf;
+  if (!target) {
+    const shelfEls = document.querySelectorAll('.shelf');
+    const bookCount = document.querySelectorAll('.book-tile').length;
+    const targetIndex = bookCount % shelfEls.length;
+    target = shelfEls[targetIndex] || shelfEls[0] || shelves();
+  }
 
   const tile = document.createElement('div');
   tile.className = 'book-tile';
@@ -128,15 +131,14 @@ export function getSortMode() {
 }
 
 export function hydrateBooks(books = []) {
-  // Clear shelves then render
-  initUI();
-
   console.log('[UI] Sorting books by:', currentSortMode);
 
   let sortedBooks = [...books];
 
   switch (currentSortMode) {
     case 'author':
+      // Clear shelves and create enough for all books
+      initUI();
       sortedBooks.sort((a, b) => {
         const authorA = (a.author || 'Unknown').toLowerCase();
         const authorB = (b.author || 'Unknown').toLowerCase();
@@ -146,6 +148,8 @@ export function hydrateBooks(books = []) {
       break;
 
     case 'genre':
+      // Clear shelves and create enough for all books
+      initUI();
       const genreGroups = new Map();
       sortedBooks.forEach(book => {
         const genre = book.genre || 'Uncategorized';
@@ -161,6 +165,8 @@ export function hydrateBooks(books = []) {
       break;
 
     case 'color':
+      // Clear shelves and create enough for all books
+      initUI();
       sortedBooks.sort((a, b) => {
         const colorA = a.spineColor || '#000000';
         const colorB = b.spineColor || '#000000';
@@ -195,14 +201,38 @@ export function hydrateBooks(books = []) {
         });
       });
 
-      // Render series books first (grouped together)
+      // Create enough shelves for all series + standalone books
+      const container = shelves();
+      container.innerHTML = '';
+      const numShelvesNeeded = Math.max(3, grouped.size + Math.ceil(standalone.length / 5));
+      for (let i = 0; i < numShelvesNeeded; i++) {
+        const shelf = document.createElement('div');
+        shelf.className = 'shelf';
+        container.appendChild(shelf);
+      }
+
+      // Get fresh shelf elements
+      const shelfEls = document.querySelectorAll('.shelf');
+      let currentShelfIndex = 0;
+
+      // Render each series on its own shelf horizontally
       grouped.forEach((seriesBooks, seriesName) => {
-        console.log('[UI] Rendering series:', seriesName, 'with', seriesBooks.length, 'books');
-        seriesBooks.forEach(book => renderBook(book));
+        console.log('[UI] Rendering series:', seriesName, 'with', seriesBooks.length, 'books on shelf', currentShelfIndex);
+        const targetShelf = shelfEls[currentShelfIndex];
+        seriesBooks.forEach(book => {
+          console.log('[UI] Adding book to shelf:', book.title, 'shelf:', currentShelfIndex);
+          renderBook(book, targetShelf);
+        });
+        // Move to next shelf for next series
+        currentShelfIndex++;
       });
 
-      // Then render standalone books
-      standalone.forEach(renderBook);
+      // Render standalone books on remaining shelves
+      standalone.forEach(book => {
+        const targetShelf = shelfEls[currentShelfIndex];
+        renderBook(book, targetShelf);
+        currentShelfIndex = (currentShelfIndex + 1) % shelfEls.length;
+      });
       break;
   }
 }

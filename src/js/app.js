@@ -5,7 +5,7 @@ import { initCamera, stopCamera, getFrameImageData, getVideoEl } from './camera.
 import { initBarcodeScanner, stopBarcodeScanner, onIsbnDetected, ocrFromFrame } from './scanner.js';
 import { initHands, onCursorMove, onGrab, onOpenHand, destroyHands, setBrowseMode } from './hand.js';
 import { renderBook, openBookModal, closeBookModal, initUI, hydrateBooks, highlightAtCursor, getCurrentBookId, setSortMode, getSortMode } from './ui.js';
-import { findBookByISBN, searchBookByText, updateBookCover } from './api.js';
+import { findBookByISBN, searchBookByText, updateBookCover, detectSeriesFromTitle } from './api.js';
 import { storage, events } from './storage.js';
 
 const qs = (sel, root = document) => root.querySelector(sel);
@@ -185,11 +185,54 @@ function setupEvents() {
   });
 }
 
+async function migrateExistingBooks() {
+  console.log('[App] Running book migration to detect series...');
+  const books = await storage.getBooks();
+  console.log('[App] Found', books.length, 'books to check');
+  let updated = 0;
+
+  for (const book of books) {
+    console.log('[App] Checking book:', book.title, 'existing series:', book.series, 'seriesNumber:', book.seriesNumber);
+
+    // Always check for series info
+    const seriesInfo = detectSeriesFromTitle(book.title);
+    console.log('[App] Detection result:', seriesInfo);
+
+    // Update if series detected and either no series exists OR series number is different
+    if (seriesInfo.series && (seriesInfo.series !== book.series || seriesInfo.seriesNumber !== book.seriesNumber)) {
+      console.log('[App] Updating series for:', book.title, 'from', book.series, book.seriesNumber, 'to', seriesInfo.series, seriesInfo.seriesNumber);
+      book.series = seriesInfo.series;
+      book.seriesNumber = seriesInfo.seriesNumber;
+      await storage.addBook(book);
+      updated++;
+    }
+  }
+
+  console.log('[App] Migration complete, updated', updated, 'books');
+  if (updated > 0) {
+    return true;
+  }
+  return false;
+}
+
+// Expose migration function globally for manual triggering
+window.migrateSeries = async function() {
+  console.log('[App] Manual migration triggered');
+  await migrateExistingBooks();
+  const books = await storage.getBooks();
+  hydrateBooks(books);
+  console.log('[App] Migration complete, books re-rendered');
+};
+
 async function boot() {
   await registerSW();
   initUI();
   setupControls();
   setupEvents();
+
+  // Run migration to fix existing books without series info
+  const migrated = await migrateExistingBooks();
+
   const books = await storage.getBooks();
   hydrateBooks(books);
 }

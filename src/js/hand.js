@@ -9,9 +9,9 @@ let onGrabCb = () => {};
 let onOpenHandCb = () => {};
 let rafId = null;
 let lastGrabFrames = 0;
-const GRAB_THRESHOLD = 0.25; // normalized distance for closed fist (very sensitive)
-const GRAB_HOLD_FRAMES = 3; // very quick detection (was 5)
-const GRAB_COOLDOWN = 45; // frames to wait after a grab (about 1.5 seconds)
+const GRAB_THRESHOLD = 0.3; // normalized distance for closed fist (extremely sensitive)
+const GRAB_HOLD_FRAMES = 2; // extremely quick detection (just 2 frames)
+const GRAB_COOLDOWN = 30; // frames to wait after a grab (about 1 second)
 let grabCooldownFrames = 0;
 let videoElRef = null;
 let hands = null;
@@ -126,8 +126,8 @@ function onResults(results) {
       (thumb.z || 0) - (palmBase.z || 0)
     );
 
-    // More lenient: need at least 2 fingers closed, or any combination with thumb
-    const isFist = closedCount >= 2 || (closedCount >= 1 && thumbDist < GRAB_THRESHOLD * 1.2);
+    // Extremely lenient: just 1 finger closed counts, or thumb close to palm
+    const isFist = closedCount >= 1 || thumbDist < GRAB_THRESHOLD * 1.5;
 
     if (debugGrab && Math.random() < 0.1) {
       console.log('[Hand] Grab detection:', {
