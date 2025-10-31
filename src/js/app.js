@@ -3,7 +3,7 @@
 
 import { initCamera, stopCamera, getFrameImageData, getVideoEl } from './camera.js';
 import { initBarcodeScanner, stopBarcodeScanner, onIsbnDetected, ocrFromFrame } from './scanner.js';
-import { initHands, onCursorMove, onGrab, onOpenHand, destroyHands, setBrowseMode } from './hand.js';
+import { initHands, onCursorMove, onGrab, onOpenHand, onWave, destroyHands, setBrowseMode } from './hand.js';
 import { renderBook, openBookModal, closeBookModal, initUI, hydrateBooks, highlightAtCursor, getCurrentBookId, setSortMode, getSortMode } from './ui.js';
 import { findBookByISBN, searchBookByText, updateBookCover, detectSeriesFromTitle } from './api.js';
 import { storage, events } from './storage.js';
@@ -174,6 +174,15 @@ function setupEvents() {
       const cover = highlighted.getAttribute('data-cover');
       const color = highlighted.getAttribute('data-color');
       openBookModal({ id, title, author, cover, color });
+    }
+  });
+
+  // Wave to close modal
+  onWave(() => {
+    const modal = document.getElementById('book-modal');
+    if (modal && modal.open) {
+      console.log('[App] Wave detected, closing modal');
+      closeBookModal();
     }
   });
 

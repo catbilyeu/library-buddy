@@ -369,6 +369,14 @@ function tryNextCoverSource(coverImg, title, author, color) {
 
 export function openBookModal({ id, title, author, cover, color }) {
   currentBookId = id;
+
+  // Clear previous content immediately to prevent cached display
+  const coverImg = modalCover();
+  coverImg.style.display = 'none';
+  coverImg.src = '';
+  coverImg.onerror = null;
+  coverImg.onload = null;
+
   modalTitle().textContent = title || 'Untitled';
   modalAuthor().textContent = author || '';
 
@@ -380,7 +388,6 @@ export function openBookModal({ id, title, author, cover, color }) {
 
   if (cover && cover !== 'null' && cover !== 'undefined' && alternativeSources.length > 0) {
     console.log('[UI] Available cover sources:', alternativeSources);
-    const coverImg = modalCover();
 
     // Enable CORS for canvas analysis
     coverImg.crossOrigin = 'anonymous';

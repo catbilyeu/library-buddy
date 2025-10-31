@@ -40,13 +40,16 @@
   background-image: url('../../assets/decor/star.svg');
 }
 
-/* Magical cursor pulse */
+/* Magical cursor pulse and smooth movement */
 @keyframes cursorPulse {
   0% { transform: translate(-50%, -50%) scale(1); }
   50% { transform: translate(-50%, -50%) scale(1.15); }
   100% { transform: translate(-50%, -50%) scale(1); }
 }
-#magic-cursor { animation: cursorPulse 2s ease-in-out infinite; }
+#magic-cursor {
+  animation: cursorPulse 2s ease-in-out infinite;
+  transition: left 0.08s ease-out, top 0.08s ease-out;
+}
 
 /* HUD panel look */
 .hud {
