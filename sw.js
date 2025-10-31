@@ -9,7 +9,7 @@ const CORE_ASSETS = [
   `${SCOPE}/src/js/app.js`,
   `${SCOPE}/src/js/api.js`,
   `${SCOPE}/src/js/storage.js`,
-  `${SCOPE}/src/js/worker/ocrWorker.js`
+  // Removed nonexistent worker path; OCR loads via CDN
 ];
 
 self.addEventListener('install', (event) => {

@@ -10,6 +10,9 @@ import { storage, events } from './storage.js';
 
 const qs = (sel, root = document) => root.querySelector(sel);
 
+let motionCursorEnabled = true;
+let motionCursorInitialized = false;
+
 async function registerSW() {
   if ('serviceWorker' in navigator) {
     try {
@@ -25,21 +28,40 @@ function setupControls() {
   const startBtn = document.querySelector('[data-action="start-scan"]');
   const browseBtn = document.querySelector('[data-action="browse-shelf"]');
   const stopBtn = document.querySelector('[data-action="stop"]');
+  const toggleMotionBtn = document.querySelector('[data-action="toggle-motion"]');
+  const exportBtn = document.querySelector('[data-action="export"]');
+  const importBtn = document.querySelector('[data-action="import"]');
+  const importInput = document.getElementById('import-file');
+  // Initialize toggle button label based on saved preference
+  const isEnabled = localStorage.getItem('motionCursor') === 'on';
+  if (toggleMotionBtn) toggleMotionBtn.textContent = isEnabled ? 'Disable Motion Cursor' : 'Enable Motion Cursor';
   const modal = document.getElementById('book-modal');
   const closeModalBtn = document.getElementById('close-modal');
   const deleteBtn = document.getElementById('delete-book');
   const sortFilter = document.getElementById('sort-filter');
+  const themeFilter = document.getElementById('theme-filter');
 
   startBtn?.addEventListener('click', startScanMode);
   browseBtn?.addEventListener('click', startBrowseMode);
   stopBtn?.addEventListener('click', stopAll);
+  toggleMotionBtn?.addEventListener('click', toggleMotionCursor);
   closeModalBtn?.addEventListener('click', () => modal.close());
   deleteBtn?.addEventListener('click', handleDeleteBook);
+
+  // Export / Import handlers (if buttons exist)
+  if (exportBtn) exportBtn.addEventListener('click', handleExport);
+  if (importBtn) importBtn.addEventListener('click', () => importInput?.click());
+  if (importInput) importInput.addEventListener('change', handleImportFile);
 
   // Load saved sort preference
   const savedSort = localStorage.getItem('librarySortMode') || 'series';
   setSortMode(savedSort);
   if (sortFilter) sortFilter.value = savedSort;
+
+  // Load saved theme preference
+  const savedTheme = localStorage.getItem('libraryTheme') || 'witchy';
+  applyTheme(savedTheme);
+  if (themeFilter) themeFilter.value = savedTheme;
 
   // Handle sort change
   sortFilter?.addEventListener('change', async (e) => {
@@ -49,6 +71,70 @@ function setupControls() {
     const books = await storage.getBooks();
     hydrateBooks(books);
   });
+
+  // Handle theme change
+  themeFilter?.addEventListener('change', (e) => {
+    const newTheme = e.target.value;
+    console.log('[App] Changing theme to:', newTheme);
+    applyTheme(newTheme);
+    localStorage.setItem('libraryTheme', newTheme);
+  });
+}
+
+function applyTheme(theme) {
+  const library = document.querySelector('.library');
+  if (!library) return;
+
+  // Remove all theme classes from library
+  library.classList.remove('theme-witchy', 'theme-colorful', 'theme-minimal');
+
+  // Add new theme class to library
+  if (theme !== 'witchy') {
+    library.classList.add(`theme-${theme}`);
+  }
+
+  // Also add theme class to body for header styling
+  document.body.classList.remove('theme-witchy', 'theme-colorful', 'theme-minimal');
+  document.body.classList.add(`theme-${theme}`);
+
+  console.log('[App] Applied theme:', theme);
+}
+
+async function handleExport() {
+  console.log('[App] Exporting library...');
+  const books = await storage.getBooks();
+  const dataStr = JSON.stringify(books, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `library-buddy-export-${Date.now()}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  console.log('[App] Exported', books.length, 'books');
+}
+
+async function handleImportFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  console.log('[App] Importing library from file:', file.name);
+  try {
+    const text = await file.text();
+    const books = JSON.parse(text);
+    console.log('[App] Parsed', books.length, 'books from import');
+
+    // Add all books to storage
+    for (const book of books) {
+      await storage.addBook(book);
+    }
+
+    console.log('[App] Import complete');
+    alert(`Successfully imported ${books.length} books!`);
+  } catch (error) {
+    console.error('[App] Import failed:', error);
+    alert('Failed to import library. Please check the file format.');
+  }
 }
 
 async function handleDeleteBook() {
@@ -61,12 +147,44 @@ async function handleDeleteBook() {
     return;
   }
 
-  // Confirm deletion
-  const confirmed = confirm('Are you sure you want to remove this book from your shelf?');
-  console.log('[App] Deletion confirmed:', confirmed);
+  // Get book title for confirmation modal
+  const bookTitle = document.querySelector('#book-modal .book-title')?.textContent || 'this book';
 
-  if (!confirmed) return;
+  // Show custom confirmation modal
+  const confirmModal = document.getElementById('confirm-delete-modal');
+  const confirmBookTitle = document.querySelector('.confirm-book-title');
+  const confirmBtn = document.getElementById('confirm-delete');
+  const cancelBtn = document.getElementById('cancel-delete');
 
+  if (confirmBookTitle) confirmBookTitle.textContent = `"${bookTitle}"`;
+  confirmModal.showModal();
+
+  // Wait for user choice
+  const userConfirmed = await new Promise((resolve) => {
+    const handleConfirm = () => {
+      cleanup();
+      resolve(true);
+    };
+    const handleCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+    const cleanup = () => {
+      confirmBtn.removeEventListener('click', handleConfirm);
+      cancelBtn.removeEventListener('click', handleCancel);
+      confirmModal.close();
+    };
+
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', handleCancel);
+  });
+
+  if (!userConfirmed) {
+    console.log('[App] Deletion cancelled by user');
+    return;
+  }
+
+  // Delete the book
   try {
     console.log('[App] Calling storage.removeBook for:', bookId);
     await storage.removeBook(bookId);
@@ -83,10 +201,14 @@ async function startScanMode() {
   overlay?.classList.remove('hidden');
   overlay?.setAttribute('aria-hidden', 'false');
 
+  // Ensure hand tracking is stopped while scanning
+  try { destroyHands(); } catch (_) {}
+  const cursor = document.getElementById('magic-cursor');
+  if (cursor) cursor.style.display = 'none';
+
   await initCamera();
   await initBarcodeScanner(getVideoEl());
   setBrowseMode(false);
-  // Don't need hands in scan mode
 }
 
 async function startBrowseMode() {
@@ -104,19 +226,71 @@ async function startBrowseMode() {
   setBrowseMode(true);
 }
 
+async function toggleMotionCursor() {
+  const cursor = document.getElementById('magic-cursor');
+  const toggleBtn = document.getElementById('toggle-motion-btn');
+
+  if (motionCursorEnabled) {
+    // Disable motion cursor
+    cursor.style.display = 'none';
+    motionCursorEnabled = false;
+    localStorage.setItem('motionCursor', 'off');
+    toggleBtn.textContent = 'Enable Motion Cursor';
+    console.log('[App] Motion cursor disabled');
+  } else {
+    // Enable motion cursor
+    cursor.style.display = 'block';
+    motionCursorEnabled = true;
+    localStorage.setItem('motionCursor', 'on');
+    toggleBtn.textContent = 'Disable Motion Cursor';
+    console.log('[App] Motion cursor enabled');
+
+    // Start hand tracking if not already initialized
+    if (!motionCursorInitialized) {
+      await startMotionCursor();
+    }
+  }
+}
+
+async function startMotionCursor() {
+  console.log('[App] Starting motion cursor...');
+  const cursor = document.getElementById('magic-cursor');
+  cursor.style.display = 'block';
+
+  try {
+    await initCamera();
+    await initHands(getVideoEl());
+    motionCursorInitialized = true;
+    console.log('[App] Motion cursor initialized successfully');
+  } catch (error) {
+    console.error('[App] Failed to initialize motion cursor:', error);
+    alert('Failed to start motion cursor. Please check camera permissions.');
+    motionCursorEnabled = false;
+    cursor.style.display = 'none';
+  }
+}
+
 async function stopAll() {
   const overlay = document.querySelector('[data-test-id="webcam-overlay"]');
   overlay?.classList.add('hidden');
   overlay?.setAttribute('aria-hidden', 'true');
 
-  // Hide cursor
-  const cursor = document.getElementById('magic-cursor');
-  cursor.style.display = 'none';
-
+  // Always stop scanners, hands, and camera when pressing Stop
   stopBarcodeScanner();
-  await stopCamera();
   destroyHands();
+  await stopCamera();
+
+  // Reset motion cursor state and UI
+  motionCursorEnabled = false;
+  motionCursorInitialized = false;
+  localStorage.setItem('motionCursor', 'off');
+  const cursor = document.getElementById('magic-cursor');
+  if (cursor) cursor.style.display = 'none';
+  const toggleBtn = document.getElementById('toggle-motion-btn');
+  if (toggleBtn) toggleBtn.textContent = 'Enable Motion Cursor';
+
   setBrowseMode(false);
+  console.log('[App] Stopped all camera operations');
 }
 
 function setupEvents() {
@@ -164,8 +338,9 @@ function setupEvents() {
     highlightAtCursor({ x, y });
   });
 
-  // Grab to open modal
+  // Grab to open modal or click buttons
   onGrab(() => {
+    // Check if hovering over a book
     const highlighted = document.querySelector('.book-tile.highlight');
     if (highlighted) {
       const id = highlighted.getAttribute('data-id');
@@ -174,15 +349,36 @@ function setupEvents() {
       const cover = highlighted.getAttribute('data-cover');
       const color = highlighted.getAttribute('data-color');
       openBookModal({ id, title, author, cover, color });
+      return;
+    }
+
+    // Check if hovering over a button
+    const cursor = document.getElementById('magic-cursor');
+    const cursorRect = cursor.getBoundingClientRect();
+    const x = cursorRect.left + cursorRect.width / 2;
+    const y = cursorRect.top + cursorRect.height / 2;
+    const element = document.elementFromPoint(x, y);
+
+    if (element && element.tagName === 'BUTTON') {
+      console.log('[App] Motion cursor clicked button:', element.textContent);
+      element.click();
     }
   });
 
-  // Wave to close modal
+  // Wave to close modal or scanner
   onWave(() => {
     const modal = document.getElementById('book-modal');
     if (modal && modal.open) {
       console.log('[App] Wave detected, closing modal');
       closeBookModal();
+      return;
+    }
+
+    // Check if scanner overlay is visible
+    const overlay = document.querySelector('[data-test-id="webcam-overlay"]');
+    if (overlay && !overlay.classList.contains('hidden')) {
+      console.log('[App] Wave detected, closing scanner');
+      stopAll();
     }
   });
 
@@ -243,7 +439,20 @@ async function boot() {
   const migrated = await migrateExistingBooks();
 
   const books = await storage.getBooks();
+  console.log('[App] Boot: Found', books.length, 'books in storage');
+  console.log('[App] Books:', books);
   hydrateBooks(books);
+
+  // Do not auto-start the camera; wait for explicit user action.
+  const wasEnabled = localStorage.getItem('motionCursor') === 'on';
+  if (wasEnabled) {
+    console.log('[App] Restoring motion cursor from previous session...');
+    motionCursorEnabled = true;
+    motionCursorInitialized = false;
+    await startMotionCursor();
+  } else {
+    console.log('[App] Motion cursor is opt-in. Use the toggle to enable.');
+  }
 }
 
 boot();

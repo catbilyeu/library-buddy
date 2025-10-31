@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Library Buddy</title>
+  <meta name="theme-color" content="#153328">
+  <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="../src/styles/variables.css">
   <link rel="stylesheet" href="../src/styles/base.css">
   <link rel="stylesheet" href="../src/styles/theme.css">
@@ -17,6 +19,10 @@
         <button data-action="start-scan">Scan Books</button>
         <button data-action="browse-shelf">Browse Bookshelf</button>
         <button data-action="stop">Stop</button>
+        <button data-action="toggle-motion" id="toggle-motion-btn">Enable Motion Cursor</button>
+        <button data-action="export">Export JSON</button>
+        <button data-action="import">Import JSON</button>
+        <input type="file" id="import-file" accept="application/json" style="display:none" />
         <div class="filter-group">
           <label for="sort-filter">Sort by:</label>
           <select id="sort-filter">
@@ -24,6 +30,14 @@
             <option value="author">Author (A-Z)</option>
             <option value="genre">Genre</option>
             <option value="color">Color</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="theme-filter">Theme:</label>
+          <select id="theme-filter">
+            <option value="witchy">Witchy</option>
+            <option value="colorful">Colorful</option>
+            <option value="minimal">Minimal</option>
           </select>
         </div>
       </div>
@@ -50,6 +64,19 @@
         <footer>
           <button id="close-modal">Close</button>
           <button id="delete-book" class="delete-btn">Remove from Shelf</button>
+        </footer>
+      </article>
+    </dialog>
+
+    <dialog id="confirm-delete-modal" class="confirm-modal">
+      <article class="confirm-content">
+        <div class="confirm-icon">📚</div>
+        <h3>Remove from Library?</h3>
+        <p class="confirm-message">Are you sure you want to remove this book from your library?</p>
+        <p class="confirm-book-title"></p>
+        <footer class="confirm-footer">
+          <button id="cancel-delete" class="cancel-btn">Cancel</button>
+          <button id="confirm-delete" class="confirm-delete-btn">Remove Book</button>
         </footer>
       </article>
     </dialog>

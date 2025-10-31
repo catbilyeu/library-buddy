@@ -11,8 +11,8 @@ p { margin: 0 0 var(--space-3); }
 .app { display: grid; grid-template-rows: auto 1fr; min-height: 100vh; }
 .library { position: relative; display: grid; grid-template-columns: 1fr; }
 
-.hud { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-6); background: linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0)); z-index: var(--z-hud); }
-.hud h1 { font-weight: 700; letter-spacing: 0.5px; }
+.hud { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-6); background: var(--green-900); z-index: var(--z-hud); }
+.hud h1 { font-weight: 700; letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; }
 .hud .controls { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
 .hud button { background: var(--green-700); color: var(--text-100); border: 1px solid rgba(255,255,255,0.08); padding: 8px 12px; border-radius: var(--radius-1); box-shadow: var(--shadow-1); }
 .hud button:hover { background: var(--green-800); }
@@ -140,3 +140,104 @@ p { margin: 0 0 var(--space-3); }
 
 /* Utility to ensure cursor is visible on boot */
 #magic-cursor { left: 50%; top: 50%; }
+
+/* Confirm delete modal */
+.confirm-modal {
+  border: none;
+  padding: 0;
+  background: transparent;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.confirm-modal[open] {
+  animation: bookFlipIn 0.3s ease-out;
+}
+
+.confirm-modal::backdrop {
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(4px);
+}
+
+.confirm-content {
+  background: linear-gradient(135deg, rgba(30,30,30,0.98), rgba(20,20,20,0.98));
+  border: 2px solid rgba(200,164,82,0.4);
+  border-radius: var(--radius-2);
+  padding: var(--space-8);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+  max-width: 450px;
+  color: var(--text-100);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+}
+
+.confirm-icon {
+  font-size: 4rem;
+  margin-bottom: var(--space-2);
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+}
+
+.confirm-content h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-100);
+  margin: 0;
+}
+
+.confirm-message {
+  font-size: 1rem;
+  color: var(--text-300);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.confirm-book-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(200,164,82,0.9);
+  font-style: italic;
+  margin: var(--space-2) 0;
+}
+
+.confirm-footer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.confirm-footer button {
+  padding: 12px 24px;
+  border-radius: var(--radius-1);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.cancel-btn {
+  background: var(--green-700);
+  color: var(--text-100);
+}
+
+.cancel-btn:hover {
+  background: var(--green-800);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.confirm-delete-btn {
+  background: linear-gradient(135deg, #8B0000, #A52A2A);
+  color: var(--text-100);
+}
+
+.confirm-delete-btn:hover {
+  background: linear-gradient(135deg, #A52A2A, #8B0000);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(165, 42, 42, 0.5);
+}

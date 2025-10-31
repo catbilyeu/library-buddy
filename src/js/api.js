@@ -54,24 +54,22 @@ function normalizeBookFromIsbnJson(isbn, data, authorName) {
   let series = null;
   let seriesNumber = null;
 
-  if (data?.series && data.series.length > 0) {
-    series = data.series[0];
-  }
-
-  // Try to extract series from subtitle or title
-  if (!series && data?.subtitle) {
-    const seriesMatch = data.subtitle.match(/\((.+?)\s*(?:#|Book|Vol\.?)\s*(\d+)\)/i);
-    if (seriesMatch) {
-      series = seriesMatch[1].trim();
-      seriesNumber = parseInt(seriesMatch[2]);
-    }
-  }
-
-  // Special handling for Harry Potter books
   const title = data?.title || '';
-  if (!series && title.toLowerCase().includes('harry potter')) {
+
+  // Special handling for popular series - check FIRST to override Open Library data
+  // Empyrean series (Fourth Wing, Iron Flame, Onyx Storm)
+  if (title.toLowerCase().includes('fourth wing') ||
+      title.toLowerCase().includes('iron flame') ||
+      title.toLowerCase().includes('onyx storm')) {
+    series = 'The Empyrean';
+    if (/fourth wing/i.test(title)) seriesNumber = 1;
+    else if (/iron flame/i.test(title)) seriesNumber = 2;
+    else if (/onyx storm/i.test(title)) seriesNumber = 3;
+  }
+
+  // Harry Potter
+  else if (title.toLowerCase().includes('harry potter')) {
     series = 'Harry Potter';
-    // Extract book number from common patterns
     const hpPatterns = [
       /philosopher'?s stone/i,
       /sorcerer'?s stone/i,
@@ -84,9 +82,33 @@ function normalizeBookFromIsbnJson(isbn, data, authorName) {
     ];
     for (let i = 0; i < hpPatterns.length; i++) {
       if (hpPatterns[i].test(title)) {
-        seriesNumber = i === 0 ? 1 : (i === 1 ? 1 : i); // Both philosopher's and sorcerer's stone are book 1
+        seriesNumber = i === 0 ? 1 : (i === 1 ? 1 : i);
         break;
       }
+    }
+  }
+
+  // A Court of Thorns and Roses
+  else if (title.toLowerCase().includes('court of')) {
+    series = 'A Court of Thorns and Roses';
+    if (/court of thorns and roses/i.test(title) && !/mist and fury|wings and ruin|frost and starlight|silver flames/i.test(title)) seriesNumber = 1;
+    else if (/mist and fury/i.test(title)) seriesNumber = 2;
+    else if (/wings and ruin/i.test(title)) seriesNumber = 3;
+    else if (/frost and starlight/i.test(title)) seriesNumber = 4;
+    else if (/silver flames/i.test(title)) seriesNumber = 5;
+  }
+
+  // Fallback to Open Library series data if no hardcoded match
+  if (!series && data?.series && data.series.length > 0) {
+    series = data.series[0];
+  }
+
+  // Try to extract series from subtitle or title
+  if (!series && data?.subtitle) {
+    const seriesMatch = data.subtitle.match(/\((.+?)\s*(?:#|Book|Vol\.?)\s*(\d+)\)/i);
+    if (seriesMatch) {
+      series = seriesMatch[1].trim();
+      seriesNumber = parseInt(seriesMatch[2]);
     }
   }
 
@@ -98,13 +120,24 @@ function normalizeBookFromIsbnJson(isbn, data, authorName) {
   }
 
   console.log('[API] Normalized book from ISBN:', isbn);
+  console.log('[API] Raw data:', data);
+  console.log('[API] Author name fetched:', authorName);
   console.log('[API] Cover URL generated:', coverUrl);
   console.log('[API] Book data:', { title: data?.title, author: authorName, series, seriesNumber, genre });
+
+  let finalAuthor = authorName || (data?.authors?.[0]?.name || '');
+
+  // Hardcode authors for known series where Open Library might fail
+  if (!finalAuthor || finalAuthor === 'TBD') {
+    if (series === 'The Empyrean') {
+      finalAuthor = 'Rebecca Yarros';
+    }
+  }
 
   return {
     id: isbn,
     title: data?.title || 'Untitled',
-    author: authorName || (data?.authors?.[0]?.name || ''),
+    author: finalAuthor,
     isbn,
     coverUrl: coverUrl,
     series: series,
@@ -115,20 +148,33 @@ function normalizeBookFromIsbnJson(isbn, data, authorName) {
 
 async function fetchAuthorName(key) {
   try {
+    console.log('[API] Fetching author from:', key);
     const r = await fetch(`https://openlibrary.org${key}.json`);
-    if (!r.ok) return '';
+    if (!r.ok) {
+      console.warn('[API] Author fetch failed with status:', r.status);
+      return '';
+    }
     const j = await r.json();
+    console.log('[API] Author data:', j);
     return j.name || '';
-  } catch (_) { return ''; }
+  } catch (e) {
+    console.error('[API] Author fetch error:', e);
+    return '';
+  }
 }
 
 /**
  * Find book by ISBN using Open Library
  */
 export async function findBookByISBN(isbn) {
-  const cKey = `isbn:${isbn}`;
+  const CACHE_VERSION = 'v2'; // Increment this to invalidate old cached data
+  const cKey = `isbn:${isbn}:${CACHE_VERSION}`;
   const cached = await cacheGet(cKey);
-  if (cached && (now() - cached.ts) < TTL_MS) return cached.value;
+  if (cached && (now() - cached.ts) < TTL_MS) {
+    console.log('[API] Using cached book data for:', isbn);
+    return cached.value;
+  }
+  console.log('[API] Fetching fresh book data for:', isbn);
   const r = await fetch(`https://openlibrary.org/isbn/${isbn}.json`);
   if (!r.ok) throw new Error('ISBN not found');
   const data = await r.json();
@@ -202,6 +248,26 @@ export function detectSeriesFromTitle(title) {
     }
 
     return { series: 'Harry Potter', seriesNumber: null };
+  }
+
+  // Empyrean series
+  if (titleLower.includes('fourth wing') || titleLower.includes('iron flame') || titleLower.includes('onyx storm')) {
+    let seriesNumber = null;
+    if (/fourth wing/i.test(title)) seriesNumber = 1;
+    else if (/iron flame/i.test(title)) seriesNumber = 2;
+    else if (/onyx storm/i.test(title)) seriesNumber = 3;
+    return { series: 'The Empyrean', seriesNumber };
+  }
+
+  // A Court of Thorns and Roses
+  if (titleLower.includes('court of')) {
+    let seriesNumber = null;
+    if (/court of thorns and roses/i.test(title) && !/mist and fury|wings and ruin|frost and starlight|silver flames/i.test(title)) seriesNumber = 1;
+    else if (/mist and fury/i.test(title)) seriesNumber = 2;
+    else if (/wings and ruin/i.test(title)) seriesNumber = 3;
+    else if (/frost and starlight/i.test(title)) seriesNumber = 4;
+    else if (/silver flames/i.test(title)) seriesNumber = 5;
+    return { series: 'A Court of Thorns and Roses', seriesNumber };
   }
 
   return { series: null, seriesNumber: null };

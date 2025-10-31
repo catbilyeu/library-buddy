@@ -10,10 +10,15 @@ let onOpenHandCb = () => {};
 let onWaveCb = () => {};
 let rafId = null;
 let lastGrabFrames = 0;
-const GRAB_THRESHOLD = 0.22; // normalized distance for closed fist (balanced sensitivity)
-const GRAB_HOLD_FRAMES = 4; // need to hold for 4 frames (~0.13 seconds)
-const GRAB_COOLDOWN = 40; // frames to wait after a grab (about 1.3 seconds)
+const GRAB_THRESHOLD = 0.25; // normalized distance for closed fist (balanced sensitivity)
+const GRAB_HOLD_FRAMES = 3; // need to hold for 3 frames (about 100ms)
+const GRAB_COOLDOWN = 30; // frames to wait after a grab (about 1 second)
 let grabCooldownFrames = 0;
+
+// Smoothing for cursor position
+let smoothedX = 0;
+let smoothedY = 0;
+const SMOOTHING_FACTOR = 0.3; // Lower = more smoothing, higher = more responsive
 
 // Wave detection
 let handPositionHistory = [];
@@ -26,6 +31,7 @@ let hands = null;
 let mpCamera = null;
 let browseMode = false;
 let debugGrab = false;
+let isProcessing = false; // Prevent overlapping frame processing
 
 export function onCursorMove(cb) { onMoveCb = cb; }
 export function onGrab(cb) { onGrabCb = cb; }
@@ -66,8 +72,16 @@ export async function initHands(videoEl) {
 
     mpCamera = new Camera(videoEl, {
       onFrame: async () => {
-        if (hands) {
-          await hands.send({ image: videoEl });
+        // Skip frame if still processing previous one
+        if (hands && !isProcessing) {
+          isProcessing = true;
+          try {
+            await hands.send({ image: videoEl });
+          } catch (error) {
+            console.error('[Hand] Error processing frame:', error);
+          } finally {
+            isProcessing = false;
+          }
         }
       },
       width: 640,
@@ -85,8 +99,10 @@ export async function initHands(videoEl) {
 export function destroyHands() {
   if (mpCamera) { try { mpCamera.stop(); } catch (_) {} }
   cancelAnimationFrame(rafId);
+  isProcessing = false; // Reset processing flag
   hands = null; mpCamera = null; lastGrabFrames = 0; browseMode = false;
   handPositionHistory = []; waveCooldownFrames = 0;
+  smoothedX = 0; smoothedY = 0;
 }
 
 function onResults(results) {
@@ -97,9 +113,20 @@ function onResults(results) {
 
   // Use palm center (landmark 0) for cursor position in browse mode
   const palmCenter = landmarks[0];
-  const x = palmCenter.x * w;
-  const y = palmCenter.y * h;
-  onMoveCb({ x, y });
+
+  // Extend range slightly to ensure full screen coverage
+  // Map from [0.1, 0.9] to [0, 1] for better edge access
+  const normalizedX = (palmCenter.x - 0.1) / 0.8;
+  const normalizedY = (palmCenter.y - 0.1) / 0.8;
+
+  const targetX = Math.max(0, Math.min(w, normalizedX * w));
+  const targetY = Math.max(0, Math.min(h, normalizedY * h));
+
+  // Apply exponential smoothing to reduce jitter
+  smoothedX = smoothedX + (targetX - smoothedX) * SMOOTHING_FACTOR;
+  smoothedY = smoothedY + (targetY - smoothedY) * SMOOTHING_FACTOR;
+
+  onMoveCb({ x: smoothedX, y: smoothedY });
 
   // Track hand position for wave detection
   handPositionHistory.push({ x: palmCenter.x, y: palmCenter.y, timestamp: Date.now() });
@@ -161,16 +188,19 @@ function onResults(results) {
       (thumb.z || 0) - (palmBase.z || 0)
     );
 
-    // Balanced: need at least 2 fingers closed, or 1 finger + thumb
-    const isFist = closedCount >= 2 || (closedCount >= 1 && thumbDist < GRAB_THRESHOLD * 1.3);
+    // Require at least 3 fingers closed (don't require thumb - it's harder to detect)
+    const isFist = closedCount >= 3;
 
-    if (debugGrab && Math.random() < 0.1) {
+    // Log more frequently for debugging
+    if (Math.random() < 0.2) {
       console.log('[Hand] Grab detection:', {
         closedCount,
         thumbDist,
+        threshold: GRAB_THRESHOLD,
         isFist,
         distances,
-        frames: lastGrabFrames
+        frames: lastGrabFrames,
+        cooldown: grabCooldownFrames
       });
     }
 

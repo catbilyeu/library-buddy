@@ -99,14 +99,23 @@ async function tryZXing(videoEl) {
  * Uses BarcodeDetector when available, ZXing fallback otherwise.
  */
 export async function initBarcodeScanner(videoEl) {
+  console.log('[Scanner] Initializing barcode scanner with video element:', videoEl);
   await stopBarcodeScanner();
   pauseUntil = 0;
   // Prefer native
+  console.log('[Scanner] Trying BarcodeDetector...');
   const okNative = await tryBarcodeDetector(videoEl);
-  if (okNative) return;
+  if (okNative) {
+    console.log('[Scanner] BarcodeDetector initialized successfully');
+    return;
+  }
   // Fallback ZXing
+  console.log('[Scanner] BarcodeDetector not available, trying ZXing...');
   const okZXing = await tryZXing(videoEl);
-  if (okZXing) return;
+  if (okZXing) {
+    console.log('[Scanner] ZXing initialized successfully');
+    return;
+  }
   console.warn('[Scanner] No supported real-time barcode method available. Consider OCR.');
 }
 

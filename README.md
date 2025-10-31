@@ -15,9 +15,9 @@ A hands-free(ish) webcam-driven catalog for your home library. Scan books to add
 - Grant camera permissions when prompted.
 
 ## Features
-- Scan ISBN barcodes via webcam (QuaggaJS) to fetch metadata and cover from Open Library
+- Scan ISBN barcodes via webcam using the native BarcodeDetector API when available, with a ZXing fallback via CDN
 - OCR fallback (Tesseract.js) to parse title/author
-- Hand tracking (MediaPipe Hands) to move a magical cursor and pinch-to-grab
+- Hand tracking (MediaPipe Hands) to move a magical cursor and pinch/grab-to-select
 - Offline-ready app shell with IndexedDB persistence and service worker caching
 
 ## Notes
@@ -35,7 +35,7 @@ A hands-free(ish) webcam-driven catalog for your home library. Scan books to add
   - public/index.html
   - src/styles/*.css
   - src/js/*.js (modules)
-  - src/js/worker/ocrWorker.js
+  - PWA: public/manifest.webmanifest, sw.js
   - sw.js
 
 

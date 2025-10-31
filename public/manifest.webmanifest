@@ -1,0 +1,13 @@
+{
+  "name": "Library Buddy",
+  "short_name": "LibraryBuddy",
+  "start_url": "/public/",
+  "display": "standalone",
+  "background_color": "#0f201a",
+  "theme_color": "#153328",
+  "description": "Hands-free(ish) webcam-driven catalog for your home library.",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

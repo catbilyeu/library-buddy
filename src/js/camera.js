@@ -22,6 +22,13 @@ export async function initCamera(constraints = { video: { facingMode: 'environme
     captureCanvas = document.createElement('canvas');
     captureCtx = captureCanvas.getContext('2d', { willReadFrequently: true });
   }
+
+  // If camera already running, just reuse it
+  if (stream && videoEl && videoEl.srcObject) {
+    console.log('[Camera] Camera already running, reusing existing stream');
+    return;
+  }
+
   try {
     console.log('[Camera] Requesting camera access with constraints:', constraints);
     stream = await navigator.mediaDevices.getUserMedia(constraints);

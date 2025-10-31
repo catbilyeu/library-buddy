@@ -20,9 +20,11 @@ export function initUI() {
   // Create a few starter shelf rows
   const container = shelves();
   container.innerHTML = '';
+  container.setAttribute('role', 'list');
   for (let i = 0; i < 3; i++) {
     const shelf = document.createElement('div');
     shelf.className = 'shelf';
+    shelf.setAttribute('role', 'group');
     container.appendChild(shelf);
   }
 }
@@ -55,13 +57,30 @@ export function renderBook(book, targetShelf = null) {
   let target = targetShelf;
   if (!target) {
     const shelfEls = document.querySelectorAll('.shelf');
+    if (shelfEls.length === 0) {
+      console.error('[UI] No shelves found, cannot render book:', book.title);
+      return;
+    }
     const bookCount = document.querySelectorAll('.book-tile').length;
     const targetIndex = bookCount % shelfEls.length;
-    target = shelfEls[targetIndex] || shelfEls[0] || shelves();
+    target = shelfEls[targetIndex];
+  }
+
+  if (!target) {
+    console.error('[UI] Target shelf is null/undefined for book:', book.title);
+    return;
+  }
+
+  if (typeof target.appendChild !== 'function') {
+    console.error('[UI] Target is not a DOM element:', target, 'for book:', book.title);
+    return;
   }
 
   const tile = document.createElement('div');
   tile.className = 'book-tile';
+  tile.setAttribute('role', 'listitem');
+  tile.tabIndex = 0;
+  tile.setAttribute('aria-label', `${book.title || 'Untitled'} by ${book.author || 'Unknown'}`);
   tile.setAttribute('data-id', book.id || book.isbn || '');
   tile.setAttribute('data-title', book.title || '');
   tile.setAttribute('data-author', book.author || '');
@@ -83,18 +102,32 @@ export function renderBook(book, targetShelf = null) {
 
   // For now, always use colored spines (cover images on spines don't look good anyway)
   // We'll show the cover image only in the modal
-  const seriesLabel = book.series && book.seriesNumber
-    ? `<div class="series-badge">#${book.seriesNumber}</div>`
-    : '';
+  // Build DOM safely without innerHTML to avoid XSS
+  const spine = document.createElement('div');
+  spine.className = 'spine';
+  spine.style.background = `linear-gradient(to right, ${spineColor} 0%, ${adjustBrightness(spineColor, 1.2)} 50%, ${spineColor} 100%)`;
+  spine.style.backgroundSize = 'auto';
 
-  tile.innerHTML = `
-    <div class="spine" style="background: linear-gradient(to right, ${spineColor} 0%, ${adjustBrightness(spineColor, 1.2)} 50%, ${spineColor} 100%) !important; background-size: auto !important;"></div>
-    ${seriesLabel}
-    <div class="title">${truncate(book.title || 'Untitled', 30)}</div>
-    <div class="author">${truncate(book.author || '', 25)}</div>
-  `;
+  if (book.series && book.seriesNumber) {
+    const badge = document.createElement('div');
+    badge.className = 'series-badge';
+    badge.textContent = `#${book.seriesNumber}`;
+    tile.appendChild(badge);
+  }
 
-  // Add click handler
+  const titleEl = document.createElement('div');
+  titleEl.className = 'title';
+  titleEl.textContent = truncate(book.title || 'Untitled', 30);
+
+  const authorEl = document.createElement('div');
+  authorEl.className = 'author';
+  authorEl.textContent = truncate(book.author || '', 25);
+
+  tile.appendChild(spine);
+  tile.appendChild(titleEl);
+  tile.appendChild(authorEl);
+
+  // Mouse/touch click handler
   tile.addEventListener('click', () => {
     const id = tile.getAttribute('data-id');
     const title = tile.getAttribute('data-title');
@@ -102,6 +135,37 @@ export function renderBook(book, targetShelf = null) {
     const cover = tile.getAttribute('data-cover');
     const color = tile.getAttribute('data-color');
     openBookModal({ id, title, author, cover, color });
+  });
+
+  // Keyboard handlers for accessibility
+  tile.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      const id = tile.getAttribute('data-id');
+      const title = tile.getAttribute('data-title');
+      const author = tile.getAttribute('data-author');
+      const cover = tile.getAttribute('data-cover');
+      const color = tile.getAttribute('data-color');
+      openBookModal({ id, title, author, cover, color });
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      const deleteBtn = document.getElementById('delete-book');
+      // Open modal first to confirm or use the existing delete flow
+      const id = tile.getAttribute('data-id');
+      const title = tile.getAttribute('data-title');
+      const author = tile.getAttribute('data-author');
+      const cover = tile.getAttribute('data-cover');
+      const color = tile.getAttribute('data-color');
+      openBookModal({ id, title, author, cover, color });
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const tiles = Array.from(document.querySelectorAll('.book-tile'));
+      const idx = tiles.indexOf(tile);
+      let next = idx;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = Math.min(tiles.length - 1, idx + 1);
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = Math.max(0, idx - 1);
+      tiles[next]?.focus();
+    }
   });
 
   target.appendChild(tile);
@@ -137,42 +201,145 @@ export function hydrateBooks(books = []) {
 
   switch (currentSortMode) {
     case 'author':
-      // Clear shelves and create enough for all books
-      initUI();
+      // Sort by author's last name, then render across multiple shelves in chunks
       sortedBooks.sort((a, b) => {
-        const authorA = (a.author || 'Unknown').toLowerCase();
-        const authorB = (b.author || 'Unknown').toLowerCase();
-        return authorA.localeCompare(authorB);
+        const getLastName = (fullName) => {
+          if (!fullName || fullName === 'Unknown') return 'zzz'; // Put unknowns at end
+          const parts = fullName.trim().split(' ');
+          return parts[parts.length - 1].toLowerCase();
+        };
+        const lastNameA = getLastName(a.author);
+        const lastNameB = getLastName(b.author);
+        return lastNameA.localeCompare(lastNameB);
       });
-      sortedBooks.forEach(renderBook);
+      {
+        const perShelf = 12;
+        const container = shelves();
+        container.innerHTML = '';
+        container.setAttribute('role', 'list');
+        const nShelves = Math.max(1, Math.ceil(sortedBooks.length / perShelf));
+        for (let i = 0; i < nShelves; i++) {
+          const shelf = document.createElement('div');
+          shelf.className = 'shelf';
+          shelf.setAttribute('role', 'group');
+          container.appendChild(shelf);
+        }
+        const shelfEls = document.querySelectorAll('.shelf');
+        sortedBooks.forEach((b, i) => renderBook(b, shelfEls[Math.floor(i / perShelf)]));
+      }
       break;
 
     case 'genre':
-      // Clear shelves and create enough for all books
-      initUI();
-      const genreGroups = new Map();
-      sortedBooks.forEach(book => {
-        const genre = book.genre || 'Uncategorized';
-        if (!genreGroups.has(genre)) {
-          genreGroups.set(genre, []);
-        }
-        genreGroups.get(genre).push(book);
-      });
-      // Sort by genre name, then render
-      Array.from(genreGroups.keys()).sort().forEach(genre => {
-        genreGroups.get(genre).forEach(renderBook);
-      });
+      // Group by genre, render each genre on its own shelf
+      {
+        const container = shelves();
+        container.innerHTML = '';
+        container.setAttribute('role', 'list');
+        const genreGroups = new Map();
+        sortedBooks.forEach(book => {
+          const genre = book.genre || 'Uncategorized';
+          if (!genreGroups.has(genre)) genreGroups.set(genre, []);
+          genreGroups.get(genre).push(book);
+        });
+        const genres = Array.from(genreGroups.keys()).sort();
+        genres.forEach((genre) => {
+          const shelf = document.createElement('div');
+          shelf.className = 'shelf';
+          shelf.setAttribute('role', 'group');
+          shelf.setAttribute('aria-label', `Genre: ${genre}`);
+          container.appendChild(shelf);
+          genreGroups.get(genre).forEach((b) => renderBook(b, shelf));
+        });
+      }
       break;
 
     case 'color':
-      // Clear shelves and create enough for all books
-      initUI();
-      sortedBooks.sort((a, b) => {
-        const colorA = a.spineColor || '#000000';
-        const colorB = b.spineColor || '#000000';
-        return colorA.localeCompare(colorB);
-      });
-      sortedBooks.forEach(renderBook);
+      // Sort by ROYGBIV + White, Brown, Grey, Black order
+      {
+        const toHsl = (hex) => {
+          const n = parseInt((hex || '#000000').replace('#', ''), 16);
+          const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+          const r1 = r/255, g1 = g/255, b1 = b/255;
+          const max = Math.max(r1, g1, b1), min = Math.min(r1, g1, b1);
+          let h, s, l = (max + min) / 2;
+          if (max === min) { h = s = 0; }
+          else {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+              case r1: h = (g1 - b1) / d + (g1 < b1 ? 6 : 0); break;
+              case g1: h = (b1 - r1) / d + 2; break;
+              case b1: h = (r1 - g1) / d + 4; break;
+            }
+            h /= 6;
+          }
+          return { h: h || 0, s: s || 0, l: l || 0 };
+        };
+
+        const getColorOrder = (hex) => {
+          const hsl = toHsl(hex);
+          const h = hsl.h * 360; // Convert to degrees
+          const s = hsl.s;
+          const l = hsl.l;
+
+          // White (high lightness, low saturation)
+          if (l > 0.85 && s < 0.2) return { category: 0, hue: h };
+
+          // Black (low lightness)
+          if (l < 0.15) return { category: 10, hue: h };
+
+          // Grey (low saturation, medium lightness)
+          if (s < 0.2 && l >= 0.15 && l <= 0.85) return { category: 9, hue: h };
+
+          // Brown (orange/yellow hue with low lightness/saturation)
+          if ((h >= 20 && h <= 45) && l < 0.5 && s < 0.7) return { category: 8, hue: h };
+
+          // ROYGBIV order based on hue
+          // Red: 0-15, 345-360
+          if ((h >= 345 || h < 15) && s >= 0.2) return { category: 1, hue: h };
+          // Orange: 15-45
+          if (h >= 15 && h < 45 && s >= 0.2) return { category: 2, hue: h };
+          // Yellow: 45-75
+          if (h >= 45 && h < 75 && s >= 0.2) return { category: 3, hue: h };
+          // Green: 75-165
+          if (h >= 75 && h < 165 && s >= 0.2) return { category: 4, hue: h };
+          // Blue: 165-255
+          if (h >= 165 && h < 255 && s >= 0.2) return { category: 5, hue: h };
+          // Indigo: 255-285
+          if (h >= 255 && h < 285 && s >= 0.2) return { category: 6, hue: h };
+          // Violet: 285-345
+          if (h >= 285 && h < 345 && s >= 0.2) return { category: 7, hue: h };
+
+          // Default fallback
+          return { category: 9, hue: h };
+        };
+
+        sortedBooks.sort((a, b) => {
+          const colorA = getColorOrder(a.spineColor || '#000000');
+          const colorB = getColorOrder(b.spineColor || '#000000');
+
+          // First sort by category (ROYGBIV order)
+          if (colorA.category !== colorB.category) {
+            return colorA.category - colorB.category;
+          }
+
+          // Within same category, sort by hue
+          return colorA.hue - colorB.hue;
+        });
+        const perShelf = 12;
+        const container = shelves();
+        container.innerHTML = '';
+        container.setAttribute('role', 'list');
+        const nShelves = Math.max(1, Math.ceil(sortedBooks.length / perShelf));
+        for (let i = 0; i < nShelves; i++) {
+          const shelf = document.createElement('div');
+          shelf.className = 'shelf';
+          shelf.setAttribute('role', 'group');
+          container.appendChild(shelf);
+        }
+        const shelfEls = document.querySelectorAll('.shelf');
+        sortedBooks.forEach((b, i) => renderBook(b, shelfEls[Math.floor(i / perShelf)]));
+      }
       break;
 
     case 'series':
@@ -238,10 +405,25 @@ export function hydrateBooks(books = []) {
 }
 
 export function highlightAtCursor({ x, y }) {
+  // Remove book highlights
   document.querySelectorAll('.book-tile').forEach(el => el.classList.remove('highlight'));
+
+  // Remove button highlights
+  document.querySelectorAll('button').forEach(btn => btn.classList.remove('cursor-hover'));
+
   const el = document.elementFromPoint(x, y);
+
+  // Highlight books
   const tile = el?.closest?.('.book-tile');
-  if (tile) tile.classList.add('highlight');
+  if (tile) {
+    tile.classList.add('highlight');
+    return;
+  }
+
+  // Highlight buttons
+  if (el && el.tagName === 'BUTTON') {
+    el.classList.add('cursor-hover');
+  }
 }
 
 function isImageBlankOrBlack(img) {
