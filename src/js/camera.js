@@ -58,13 +58,39 @@ export async function initCamera(constraints = { video: { facingMode: 'environme
 }
 
 export async function stopCamera() {
+  console.log('[Camera] Stopping camera...');
+
+  // Stop tracks from the video element's stream (may be managed by MediaPipe)
+  if (videoEl && videoEl.srcObject) {
+    console.log('[Camera] Found video stream on video element');
+    const videoStream = videoEl.srcObject;
+    if (videoStream && videoStream.getTracks) {
+      console.log('[Camera] Stopping video element stream tracks...');
+      videoStream.getTracks().forEach(t => {
+        console.log('[Camera] Stopping track:', t.kind, t.label, 'readyState:', t.readyState);
+        t.stop();
+      });
+    }
+  }
+
+  // Also stop our own stream reference if it exists
   if (stream) {
-    stream.getTracks().forEach(t => t.stop());
+    console.log('[Camera] Stopping module-level stream tracks...');
+    stream.getTracks().forEach(t => {
+      console.log('[Camera] Stopping track:', t.kind, t.label, 'readyState:', t.readyState);
+      t.stop();
+    });
     stream = null;
   }
+
   if (videoEl) {
+    console.log('[Camera] Clearing video source...');
     videoEl.srcObject = null;
+    videoEl.pause();
+    videoEl.load(); // Force reload to clear any cached stream
   }
+
+  console.log('[Camera] Camera stopped successfully');
 }
 
 export function getFrameImageData() {

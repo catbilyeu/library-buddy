@@ -26,7 +26,6 @@ async function registerSW() {
 
 function setupControls() {
   const startBtn = document.querySelector('[data-action="start-scan"]');
-  const browseBtn = document.querySelector('[data-action="browse-shelf"]');
   const stopBtn = document.querySelector('[data-action="stop"]');
   const toggleMotionBtn = document.querySelector('[data-action="toggle-motion"]');
   const exportBtn = document.querySelector('[data-action="export"]');
@@ -42,11 +41,14 @@ function setupControls() {
   const themeFilter = document.getElementById('theme-filter');
 
   startBtn?.addEventListener('click', startScanMode);
-  browseBtn?.addEventListener('click', startBrowseMode);
   stopBtn?.addEventListener('click', stopAll);
   toggleMotionBtn?.addEventListener('click', toggleMotionCursor);
   closeModalBtn?.addEventListener('click', () => modal.close());
   deleteBtn?.addEventListener('click', handleDeleteBook);
+
+  // Close scanner button
+  const closeScannerBtn = document.getElementById('close-scanner-btn');
+  closeScannerBtn?.addEventListener('click', stopAll);
 
   // Export / Import handlers (if buttons exist)
   if (exportBtn) exportBtn.addEventListener('click', handleExport);
@@ -211,21 +213,6 @@ async function startScanMode() {
   setBrowseMode(false);
 }
 
-async function startBrowseMode() {
-  // Hide webcam overlay, show cursor
-  const overlay = document.querySelector('[data-test-id="webcam-overlay"]');
-  overlay?.classList.add('hidden');
-  overlay?.setAttribute('aria-hidden', 'true');
-
-  // Show cursor
-  const cursor = document.getElementById('magic-cursor');
-  cursor.style.display = 'block';
-
-  await initCamera();
-  await initHands(getVideoEl());
-  setBrowseMode(true);
-}
-
 async function toggleMotionCursor() {
   const cursor = document.getElementById('magic-cursor');
   const toggleBtn = document.getElementById('toggle-motion-btn');
@@ -271,13 +258,22 @@ async function startMotionCursor() {
 }
 
 async function stopAll() {
+  console.log('[App] Stopping all camera operations...');
+
   const overlay = document.querySelector('[data-test-id="webcam-overlay"]');
   overlay?.classList.add('hidden');
   overlay?.setAttribute('aria-hidden', 'true');
 
-  // Always stop scanners, hands, and camera when pressing Stop
+  // Stop in the correct order: scanner first, then hands (which uses camera), then camera itself
   stopBarcodeScanner();
+
+  // Destroy hands/MediaPipe first (it manages its own camera internally)
   destroyHands();
+
+  // Small delay to ensure MediaPipe releases the camera
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  // Now stop our camera module
   await stopCamera();
 
   // Reset motion cursor state and UI

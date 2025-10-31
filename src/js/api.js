@@ -98,6 +98,15 @@ function normalizeBookFromIsbnJson(isbn, data, authorName) {
     else if (/silver flames/i.test(title)) seriesNumber = 5;
   }
 
+  // The Crowns of Nyaxia series (Carissa Broadbent)
+  else if (title.toLowerCase().includes('serpent and the wings') ||
+           title.toLowerCase().includes('ashes and the star') ||
+           title.toLowerCase().includes('crowns of nyaxia')) {
+    series = 'The Crowns of Nyaxia';
+    if (/serpent and the wings/i.test(title)) seriesNumber = 1;
+    else if (/ashes and the star/i.test(title)) seriesNumber = 2;
+  }
+
   // Fallback to Open Library series data if no hardcoded match
   if (!series && data?.series && data.series.length > 0) {
     series = data.series[0];
@@ -131,6 +140,12 @@ function normalizeBookFromIsbnJson(isbn, data, authorName) {
   if (!finalAuthor || finalAuthor === 'TBD') {
     if (series === 'The Empyrean') {
       finalAuthor = 'Rebecca Yarros';
+    } else if (series === 'Harry Potter') {
+      finalAuthor = 'J.K. Rowling';
+    } else if (series === 'The Crowns of Nyaxia') {
+      finalAuthor = 'Carissa Broadbent';
+    } else if (series === 'A Court of Thorns and Roses') {
+      finalAuthor = 'Sarah J. Maas';
     }
   }
 
@@ -167,7 +182,7 @@ async function fetchAuthorName(key) {
  * Find book by ISBN using Open Library
  */
 export async function findBookByISBN(isbn) {
-  const CACHE_VERSION = 'v2'; // Increment this to invalidate old cached data
+  const CACHE_VERSION = 'v3'; // Increment this to invalidate old cached data
   const cKey = `isbn:${isbn}:${CACHE_VERSION}`;
   const cached = await cacheGet(cKey);
   if (cached && (now() - cached.ts) < TTL_MS) {
@@ -268,6 +283,16 @@ export function detectSeriesFromTitle(title) {
     else if (/frost and starlight/i.test(title)) seriesNumber = 4;
     else if (/silver flames/i.test(title)) seriesNumber = 5;
     return { series: 'A Court of Thorns and Roses', seriesNumber };
+  }
+
+  // The Crowns of Nyaxia series
+  if (titleLower.includes('serpent and the wings') ||
+      titleLower.includes('ashes and the star') ||
+      titleLower.includes('crowns of nyaxia')) {
+    let seriesNumber = null;
+    if (/serpent and the wings/i.test(title)) seriesNumber = 1;
+    else if (/ashes and the star/i.test(title)) seriesNumber = 2;
+    return { series: 'The Crowns of Nyaxia', seriesNumber };
   }
 
   return { series: null, seriesNumber: null };

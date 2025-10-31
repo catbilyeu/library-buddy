@@ -97,12 +97,29 @@ export async function initHands(videoEl) {
 }
 
 export function destroyHands() {
-  if (mpCamera) { try { mpCamera.stop(); } catch (_) {} }
-  cancelAnimationFrame(rafId);
+  console.log('[Hand] Destroying hand tracking...');
+  if (mpCamera) {
+    try {
+      console.log('[Hand] Stopping MediaPipe camera...');
+      mpCamera.stop();
+    } catch (e) {
+      console.warn('[Hand] Error stopping MediaPipe camera:', e);
+    }
+  }
+  if (rafId) {
+    cancelAnimationFrame(rafId);
+    console.log('[Hand] Cancelled animation frame');
+  }
   isProcessing = false; // Reset processing flag
-  hands = null; mpCamera = null; lastGrabFrames = 0; browseMode = false;
-  handPositionHistory = []; waveCooldownFrames = 0;
-  smoothedX = 0; smoothedY = 0;
+  hands = null;
+  mpCamera = null;
+  lastGrabFrames = 0;
+  browseMode = false;
+  handPositionHistory = [];
+  waveCooldownFrames = 0;
+  smoothedX = 0;
+  smoothedY = 0;
+  console.log('[Hand] Hand tracking destroyed');
 }
 
 function onResults(results) {

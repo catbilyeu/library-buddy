@@ -101,13 +101,13 @@ body.theme-minimal .hud select:hover {
   backdrop-filter: none;
   border-radius: 0;
   box-shadow: none;
-  min-height: 200px;
-  height: 200px;
+  min-height: 240px;
+  height: 240px;
   position: relative;
   display: flex;
   align-items: flex-end;
   padding: 0 var(--space-6) var(--space-4);
-  gap: var(--space-2);
+  gap: var(--space-3);
   overflow-x: auto;
   overflow-y: hidden;
   margin: var(--space-4) 0;
@@ -116,8 +116,8 @@ body.theme-minimal .hud select:hover {
 /* Book tile - looks like a book spine */
 .book-tile {
   flex-shrink: 0;
-  width: 48px;
-  height: 170px;
+  width: 65px;
+  height: 210px;
   position: relative;
   cursor: pointer;
   transition: transform 0.2s ease;
@@ -129,6 +129,7 @@ body.theme-minimal .hud select:hover {
   justify-content: flex-start;
   padding: var(--space-3) var(--space-2);
   border-radius: 2px 2px 0 0;
+  overflow: hidden;
   background: linear-gradient(
     to right,
     rgba(0,0,0,0.3) 0%,
@@ -158,27 +159,32 @@ body.theme-minimal .hud select:hover {
 }
 
 .book-tile .title {
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-100);
-  white-space: nowrap;
+  white-space: normal;
   overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 150px;
+  max-width: 190px;
+  max-height: 140px;
   position: relative;
   z-index: 1;
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
   letter-spacing: 0.3px;
   padding: var(--space-2) 0;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 8;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
 }
 
 .book-tile .author {
-  font-size: 0.6rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 150px;
+  max-width: 190px;
   position: relative;
   z-index: 1;
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);

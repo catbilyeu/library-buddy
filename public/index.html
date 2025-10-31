@@ -17,7 +17,6 @@
       <h1>Library Buddy</h1>
       <div class="controls">
         <button data-action="start-scan">Scan Books</button>
-        <button data-action="browse-shelf">Browse Bookshelf</button>
         <button data-action="stop">Stop</button>
         <button data-action="toggle-motion" id="toggle-motion-btn">Enable Motion Cursor</button>
         <button data-action="export">Export JSON</button>
@@ -49,6 +48,7 @@
       <section class="webcam-overlay hidden" data-test-id="webcam-overlay" aria-hidden="true">
         <video id="webcam-video" autoplay playsinline muted></video>
         <canvas id="overlay-canvas"></canvas>
+        <button class="close-scanner-btn" id="close-scanner-btn" aria-label="Close Scanner">✕</button>
       </section>
     </main>
 

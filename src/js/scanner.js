@@ -120,18 +120,33 @@ export async function initBarcodeScanner(videoEl) {
 }
 
 export async function stopBarcodeScanner() {
+  console.log('[Scanner] Stopping barcode scanner...');
   running = false;
-  if (rafId) cancelAnimationFrame(rafId);
+  if (rafId) {
+    cancelAnimationFrame(rafId);
+    console.log('[Scanner] Cancelled animation frame');
+  }
   rafId = null;
   // Stop ZXing if active
   try {
-    if (zxingControls && typeof zxingControls.stop === 'function') zxingControls.stop();
-  } catch (_) {}
+    if (zxingControls && typeof zxingControls.stop === 'function') {
+      console.log('[Scanner] Stopping ZXing controls...');
+      zxingControls.stop();
+    }
+  } catch (e) {
+    console.warn('[Scanner] Error stopping ZXing controls:', e);
+  }
   try {
-    if (zxingReader && typeof zxingReader.reset === 'function') zxingReader.reset();
-  } catch (_) {}
+    if (zxingReader && typeof zxingReader.reset === 'function') {
+      console.log('[Scanner] Resetting ZXing reader...');
+      zxingReader.reset();
+    }
+  } catch (e) {
+    console.warn('[Scanner] Error resetting ZXing reader:', e);
+  }
   zxingControls = null;
   zxingReader = null;
+  console.log('[Scanner] Barcode scanner stopped');
 }
 
 // OCR fallback (helper)
