@@ -8,10 +8,10 @@ p { margin: 0 0 var(--space-3); }
 
 .hidden { display: none !important; }
 
-.app { display: grid; grid-template-rows: auto 1fr; min-height: 100vh; }
-.library { position: relative; display: grid; grid-template-columns: 1fr; }
+.app { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; overflow: hidden; }
+.library { position: relative; display: grid; grid-template-columns: 1fr; overflow: hidden; }
 
-.hud { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-6); background: var(--green-900); z-index: var(--z-hud); }
+.hud { position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; padding: 8px var(--space-6); background: var(--green-900); z-index: var(--z-hud); }
 .hud h1 { font-weight: 700; letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; }
 .hud .controls { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
 .hud button { background: var(--green-700); color: var(--text-100); border: 1px solid rgba(255,255,255,0.08); padding: 8px 12px; border-radius: var(--radius-1); box-shadow: var(--shadow-1); }
@@ -30,6 +30,63 @@ p { margin: 0 0 var(--space-3); }
   font-size: 0.9rem;
 }
 .filter-group select:hover { background: var(--green-800); }
+.filter-group input[type="text"] {
+  background: var(--green-700);
+  color: var(--text-100);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 8px 12px;
+  border-radius: var(--radius-1);
+  box-shadow: var(--shadow-1);
+  font-size: 0.9rem;
+  width: 140px;
+}
+.filter-group input[type="text"]:focus {
+  outline: 2px solid var(--accent-500);
+  outline-offset: 2px;
+}
+
+.pagination-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  padding: 10px var(--space-4);
+  background: var(--green-900);
+  border-top: 1px solid rgba(200,164,82,0.25);
+  z-index: var(--z-hud);
+  position: relative;
+  min-height: 50px;
+}
+
+.page-btn {
+  background: var(--green-700);
+  color: var(--text-100);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 8px 16px;
+  border-radius: var(--radius-1);
+  box-shadow: var(--shadow-1);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: var(--green-800);
+  transform: translateY(-2px);
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 0.95rem;
+  color: var(--text-300);
+  font-weight: 600;
+  min-width: 100px;
+  text-align: center;
+}
 
 .webcam-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: var(--z-overlay); }
 #webcam-video { max-width: 90%; max-height: 90vh; width: auto; height: auto; border-radius: var(--radius-2); box-shadow: 0 0 40px rgba(0,0,0,0.5); border: 2px solid rgba(139,216,189,0.3); }

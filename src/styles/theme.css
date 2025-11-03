@@ -43,6 +43,19 @@ body.theme-colorful .hud select:hover {
   background: #a84773;
 }
 
+body.theme-colorful .pagination-footer {
+  background: #d4739b;
+}
+
+body.theme-colorful .page-btn {
+  background: #c05a87;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+body.theme-colorful .page-btn:hover:not(:disabled) {
+  background: #a84773;
+}
+
 /* Minimal theme */
 .library.theme-minimal {
   background:
@@ -86,13 +99,33 @@ body.theme-minimal .hud select:hover {
   background: #d9cbb5;
 }
 
+body.theme-minimal .pagination-footer {
+  background: #f5f0e8;
+  color: #333;
+}
+
+body.theme-minimal .page-info {
+  color: #666;
+}
+
+body.theme-minimal .page-btn {
+  background: #e8dcc8;
+  color: #333;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+body.theme-minimal .page-btn:hover:not(:disabled) {
+  background: #d9cbb5;
+}
+
 /* Shelves - stacked vertically */
 .shelves {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
-  padding: var(--space-8);
-  padding-top: var(--space-6);
+  gap: 16px;
+  padding: 12px var(--space-6) 16px;
+  overflow: hidden;
+  height: 100%;
 }
 
 /* Shelf - transparent to show background image */
@@ -101,16 +134,16 @@ body.theme-minimal .hud select:hover {
   backdrop-filter: none;
   border-radius: 0;
   box-shadow: none;
-  min-height: 240px;
-  height: 240px;
+  height: 210px;
+  flex-shrink: 0;
   position: relative;
   display: flex;
   align-items: flex-end;
-  padding: 0 var(--space-6) var(--space-4);
+  padding: 0 var(--space-4) 0;
   gap: var(--space-3);
   overflow-x: auto;
   overflow-y: hidden;
-  margin: var(--space-4) 0;
+  margin: 0;
 }
 
 /* Book tile - looks like a book spine */
@@ -199,6 +232,19 @@ body.theme-minimal .hud select:hover {
     0 0 0 4px rgba(139,216,189,0.2),
     0 0 16px rgba(139,216,189,0.4);
   transform: translateY(-8px);
+}
+
+/* Series divider */
+.series-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 210px;
+  width: 30px;
+  flex-shrink: 0;
+  font-size: 1.5rem;
+  color: rgba(200,164,82,0.7);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 /* Series badge */

@@ -107,9 +107,37 @@ function normalizeBookFromIsbnJson(isbn, data, authorName) {
     else if (/ashes and the star/i.test(title)) seriesNumber = 2;
   }
 
+  // Harry Potter series (J.K. Rowling)
+  else if (title.toLowerCase().includes('harry potter')) {
+    series = 'Harry Potter';
+    if (/philosopher'?s stone|sorcerer'?s stone/i.test(title)) seriesNumber = 1;
+    else if (/chamber of secrets/i.test(title)) seriesNumber = 2;
+    else if (/prisoner of azkaban/i.test(title)) seriesNumber = 3;
+    else if (/goblet of fire/i.test(title)) seriesNumber = 4;
+    else if (/order of the phoenix/i.test(title)) seriesNumber = 5;
+    else if (/half-blood prince/i.test(title)) seriesNumber = 6;
+    else if (/deathly hallows/i.test(title)) seriesNumber = 7;
+  }
+
+  // It Ends with Us series (Colleen Hoover)
+  else if (title.toLowerCase().includes('it ends with us') ||
+           title.toLowerCase().includes('it starts with us')) {
+    series = 'It Ends with Us';
+    if (/it ends with us/i.test(title)) seriesNumber = 1;
+    else if (/it starts with us/i.test(title)) seriesNumber = 2;
+  }
+
   // Fallback to Open Library series data if no hardcoded match
   if (!series && data?.series && data.series.length > 0) {
-    series = data.series[0];
+    // Extract series name and number from formats like "Harry Potter, #2" or "Series Name"
+    const seriesStr = data.series[0];
+    const seriesMatch = seriesStr.match(/^(.+?),?\s*#(\d+)$/);
+    if (seriesMatch) {
+      series = seriesMatch[1].trim();
+      if (!seriesNumber) seriesNumber = parseInt(seriesMatch[2]);
+    } else {
+      series = seriesStr;
+    }
   }
 
   // Try to extract series from subtitle or title
@@ -146,6 +174,8 @@ function normalizeBookFromIsbnJson(isbn, data, authorName) {
       finalAuthor = 'Carissa Broadbent';
     } else if (series === 'A Court of Thorns and Roses') {
       finalAuthor = 'Sarah J. Maas';
+    } else if (series === 'It Ends with Us') {
+      finalAuthor = 'Colleen Hoover';
     }
   }
 
@@ -182,22 +212,25 @@ async function fetchAuthorName(key) {
  * Find book by ISBN using Open Library
  */
 export async function findBookByISBN(isbn) {
-  const CACHE_VERSION = 'v3'; // Increment this to invalidate old cached data
-  const cKey = `isbn:${isbn}:${CACHE_VERSION}`;
+  // Normalize ISBN by removing hyphens and spaces
+  const normalizedIsbn = isbn.replace(/[-\s]/g, '');
+
+  const CACHE_VERSION = 'v6'; // Increment this to invalidate old cached data
+  const cKey = `isbn:${normalizedIsbn}:${CACHE_VERSION}`;
   const cached = await cacheGet(cKey);
   if (cached && (now() - cached.ts) < TTL_MS) {
-    console.log('[API] Using cached book data for:', isbn);
+    console.log('[API] Using cached book data for:', normalizedIsbn);
     return cached.value;
   }
-  console.log('[API] Fetching fresh book data for:', isbn);
-  const r = await fetch(`https://openlibrary.org/isbn/${isbn}.json`);
+  console.log('[API] Fetching fresh book data for:', normalizedIsbn);
+  const r = await fetch(`https://openlibrary.org/isbn/${normalizedIsbn}.json`);
   if (!r.ok) throw new Error('ISBN not found');
   const data = await r.json();
   let authorName = '';
   if (data?.authors?.[0]?.key) {
     authorName = await fetchAuthorName(data.authors[0].key);
   }
-  const book = normalizeBookFromIsbnJson(isbn, data, authorName);
+  const book = normalizeBookFromIsbnJson(normalizedIsbn, data, authorName);
   await cacheSet(cKey, book);
   return book;
 }
@@ -293,6 +326,14 @@ export function detectSeriesFromTitle(title) {
     if (/serpent and the wings/i.test(title)) seriesNumber = 1;
     else if (/ashes and the star/i.test(title)) seriesNumber = 2;
     return { series: 'The Crowns of Nyaxia', seriesNumber };
+  }
+
+  // It Ends with Us series
+  if (titleLower.includes('it ends with us') || titleLower.includes('it starts with us')) {
+    let seriesNumber = null;
+    if (/it ends with us/i.test(title)) seriesNumber = 1;
+    else if (/it starts with us/i.test(title)) seriesNumber = 2;
+    return { series: 'It Ends with Us', seriesNumber };
   }
 
   return { series: null, seriesNumber: null };

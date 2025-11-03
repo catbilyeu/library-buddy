@@ -4,7 +4,7 @@
 import { initCamera, stopCamera, getFrameImageData, getVideoEl } from './camera.js';
 import { initBarcodeScanner, stopBarcodeScanner, onIsbnDetected, ocrFromFrame } from './scanner.js';
 import { initHands, onCursorMove, onGrab, onOpenHand, onWave, destroyHands, setBrowseMode } from './hand.js';
-import { renderBook, openBookModal, closeBookModal, initUI, hydrateBooks, highlightAtCursor, getCurrentBookId, setSortMode, getSortMode } from './ui.js';
+import { renderBook, openBookModal, closeBookModal, initUI, hydrateBooks, highlightAtCursor, getCurrentBookId, setSortMode, getSortMode, nextPage, prevPage } from './ui.js';
 import { findBookByISBN, searchBookByText, updateBookCover, detectSeriesFromTitle } from './api.js';
 import { storage, events } from './storage.js';
 
@@ -49,6 +49,22 @@ function setupControls() {
   // Close scanner button
   const closeScannerBtn = document.getElementById('close-scanner-btn');
   closeScannerBtn?.addEventListener('click', stopAll);
+
+  // Pagination buttons
+  const prevPageBtn = document.getElementById('prev-page');
+  const nextPageBtn = document.getElementById('next-page');
+  prevPageBtn?.addEventListener('click', prevPage);
+  nextPageBtn?.addEventListener('click', nextPage);
+
+  // Manual ISBN entry
+  const manualIsbnInput = document.getElementById('manual-isbn');
+  const addIsbnBtn = document.getElementById('add-isbn-btn');
+  addIsbnBtn?.addEventListener('click', () => handleManualIsbn(manualIsbnInput));
+  manualIsbnInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      handleManualIsbn(manualIsbnInput);
+    }
+  });
 
   // Export / Import handlers (if buttons exist)
   if (exportBtn) exportBtn.addEventListener('click', handleExport);
@@ -136,6 +152,55 @@ async function handleImportFile(event) {
   } catch (error) {
     console.error('[App] Import failed:', error);
     alert('Failed to import library. Please check the file format.');
+  }
+}
+
+async function handleManualIsbn(inputElement) {
+  if (!inputElement) return;
+
+  const isbn = inputElement.value.trim();
+  if (!isbn) {
+    alert('Please enter an ISBN');
+    return;
+  }
+
+  console.log('[App] Manual ISBN entry:', isbn);
+
+  try {
+    const book = await findBookByISBN(isbn);
+    if (book) {
+      // Generate and save spine color
+      if (!book.spineColor) {
+        const getBookColor = (bookId, title) => {
+          const seed = bookId || title || 'default';
+          let hash = 0;
+          for (let i = 0; i < seed.length; i++) {
+            hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+            hash = hash & hash;
+          }
+          const colors = [
+            '#8B4513', '#A0522D', '#D2691E',
+            '#2F4F4F', '#556B2F', '#4B5320',
+            '#800020', '#8B0000', '#A52A2A',
+            '#1C3A4A', '#2C4F68', '#1E3A5F',
+            '#3B2F2F', '#4A4A4A', '#2B2B2B',
+            '#6B4423', '#8B6914', '#9B7653',
+          ];
+          const index = Math.abs(hash) % colors.length;
+          return colors[index];
+        };
+        book.spineColor = getBookColor(book.id || book.isbn, book.title);
+      }
+      await storage.addBook(book);
+      renderBook(book);
+      inputElement.value = '';
+      console.log('[App] Book added successfully:', book.title);
+    } else {
+      alert('Book not found. Please check the ISBN and try again.');
+    }
+  } catch (error) {
+    console.error('[App] Failed to fetch book:', error);
+    alert('Failed to fetch book data. Please try again.');
   }
 }
 

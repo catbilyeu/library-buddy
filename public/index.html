@@ -19,6 +19,11 @@
         <button data-action="start-scan">Scan Books</button>
         <button data-action="stop">Stop</button>
         <button data-action="toggle-motion" id="toggle-motion-btn">Enable Motion Cursor</button>
+        <div class="filter-group">
+          <label for="manual-isbn">ISBN:</label>
+          <input type="text" id="manual-isbn" placeholder="Enter ISBN" />
+          <button id="add-isbn-btn">Add Book</button>
+        </div>
         <button data-action="export">Export JSON</button>
         <button data-action="import">Import JSON</button>
         <input type="file" id="import-file" accept="application/json" style="display:none" />
@@ -51,6 +56,12 @@
         <button class="close-scanner-btn" id="close-scanner-btn" aria-label="Close Scanner">✕</button>
       </section>
     </main>
+
+    <footer class="pagination-footer">
+      <button id="prev-page" class="page-btn" disabled>← Previous</button>
+      <span id="page-info" class="page-info">Page 1 of 1</span>
+      <button id="next-page" class="page-btn" disabled>Next →</button>
+    </footer>
 
     <div id="magic-cursor" data-test-id="cursor" aria-hidden="true"></div>
 

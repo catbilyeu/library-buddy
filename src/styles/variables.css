@@ -30,7 +30,7 @@
 
   /* Z-index */
   --z-hud: 20;
-  --z-cursor: 30;
-  --z-modal: 40;
   --z-overlay: 10;
+  --z-modal: 40;
+  --z-cursor: 50;
 }

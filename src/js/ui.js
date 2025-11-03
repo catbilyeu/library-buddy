@@ -184,6 +184,10 @@ function truncate(str, len) {
 }
 
 let currentSortMode = 'series';
+let currentPage = 1;
+let totalPages = 1;
+let allBooks = [];
+const SHELVES_PER_PAGE = 3; // Number of shelves to show per page
 
 export function setSortMode(mode) {
   currentSortMode = mode;
@@ -194,10 +198,56 @@ export function getSortMode() {
   return currentSortMode;
 }
 
+export function setPage(page) {
+  currentPage = Math.max(1, Math.min(page, totalPages));
+  renderCurrentPage();
+  updatePaginationUI();
+}
+
+export function nextPage() {
+  if (currentPage < totalPages) {
+    setPage(currentPage + 1);
+  }
+}
+
+export function prevPage() {
+  if (currentPage > 1) {
+    setPage(currentPage - 1);
+  }
+}
+
+function updatePaginationUI() {
+  const prevBtn = document.getElementById('prev-page');
+  const nextBtn = document.getElementById('next-page');
+  const pageInfo = document.getElementById('page-info');
+
+  if (prevBtn) prevBtn.disabled = currentPage === 1;
+  if (nextBtn) nextBtn.disabled = currentPage === totalPages;
+  if (pageInfo) pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+}
+
+function renderCurrentPage() {
+  const allShelves = Array.from(document.querySelectorAll('.shelf'));
+
+  // Calculate which shelves to show
+  const startIdx = (currentPage - 1) * SHELVES_PER_PAGE;
+  const endIdx = startIdx + SHELVES_PER_PAGE;
+
+  // Show/hide shelves based on current page
+  allShelves.forEach((shelf, idx) => {
+    if (idx >= startIdx && idx < endIdx) {
+      shelf.style.display = 'flex';
+    } else {
+      shelf.style.display = 'none';
+    }
+  });
+}
+
 export function hydrateBooks(books = []) {
   console.log('[UI] Sorting books by:', currentSortMode);
 
   let sortedBooks = [...books];
+  currentPage = 1; // Reset to first page when rehydrating
 
   switch (currentSortMode) {
     case 'author':
@@ -344,64 +394,115 @@ export function hydrateBooks(books = []) {
 
     case 'series':
     default:
-      // Group books by series
-      const grouped = new Map();
-      const standalone = [];
+      // Sort by author (last name), keeping series grouped together
+      const getLastName = (fullName) => {
+        if (!fullName || fullName === 'Unknown') return 'zzz';
+        const parts = fullName.trim().split(' ');
+        return parts[parts.length - 1].toLowerCase();
+      };
 
+      // Group by author first
+      const byAuthor = new Map();
       books.forEach(book => {
-        if (book.series) {
-          if (!grouped.has(book.series)) {
-            grouped.set(book.series, []);
+        const author = book.author || 'Unknown';
+        if (!byAuthor.has(author)) byAuthor.set(author, []);
+        byAuthor.get(author).push(book);
+      });
+
+      // Within each author, group by series
+      const sortedFlat = [];
+      Array.from(byAuthor.keys())
+        .sort((a, b) => getLastName(a).localeCompare(getLastName(b)))
+        .forEach(author => {
+          const authorBooks = byAuthor.get(author);
+
+          // Group by series within this author
+          const seriesMap = new Map();
+          const standaloneBooks = [];
+
+          authorBooks.forEach(book => {
+            if (book.series) {
+              if (!seriesMap.has(book.series)) seriesMap.set(book.series, []);
+              seriesMap.get(book.series).push(book);
+            } else {
+              standaloneBooks.push(book);
+            }
+          });
+
+          // Sort each series by series number
+          seriesMap.forEach(seriesBooks => {
+            seriesBooks.sort((a, b) => (a.seriesNumber || 0) - (b.seriesNumber || 0));
+          });
+
+          // Add series books (sorted alphabetically by series name)
+          Array.from(seriesMap.keys()).sort().forEach(seriesName => {
+            // Only add divider if there are already books in the list
+            if (sortedFlat.length > 0) {
+              sortedFlat.push({ type: 'divider', label: seriesName });
+            }
+            sortedFlat.push(...seriesMap.get(seriesName));
+          });
+
+          // Add standalone books for this author
+          if (standaloneBooks.length > 0) {
+            // Only add divider if there are already books in the list
+            if (sortedFlat.length > 0) {
+              sortedFlat.push({ type: 'divider', label: `${author} - Other` });
+            }
+            sortedFlat.push(...standaloneBooks);
           }
-          grouped.get(book.series).push(book);
-        } else {
-          standalone.push(book);
-        }
-      });
-
-      // Sort series books by series number
-      grouped.forEach(seriesBooks => {
-        seriesBooks.sort((a, b) => {
-          const numA = a.seriesNumber || 0;
-          const numB = b.seriesNumber || 0;
-          return numA - numB;
         });
-      });
 
-      // Create enough shelves for all series + standalone books
+      // Render with dividers - distribute across shelves with horizontal scrolling
       const container = shelves();
       container.innerHTML = '';
-      const numShelvesNeeded = Math.max(3, grouped.size + Math.ceil(standalone.length / 5));
-      for (let i = 0; i < numShelvesNeeded; i++) {
+      container.setAttribute('role', 'list');
+
+      // Estimate items per shelf based on screen width (no hard limit, just for distribution)
+      const estimatedItemsPerShelf = Math.floor(window.innerWidth / 80); // Roughly 80px per book/divider
+      const totalItems = sortedFlat.length;
+      const nShelves = Math.max(3, Math.ceil(totalItems / estimatedItemsPerShelf));
+
+      for (let i = 0; i < nShelves; i++) {
         const shelf = document.createElement('div');
         shelf.className = 'shelf';
+        shelf.setAttribute('role', 'group');
         container.appendChild(shelf);
       }
 
-      // Get fresh shelf elements
       const shelfEls = document.querySelectorAll('.shelf');
       let currentShelfIndex = 0;
+      let itemsOnCurrentShelf = 0;
 
-      // Render each series on its own shelf horizontally
-      grouped.forEach((seriesBooks, seriesName) => {
-        console.log('[UI] Rendering series:', seriesName, 'with', seriesBooks.length, 'books on shelf', currentShelfIndex);
-        const targetShelf = shelfEls[currentShelfIndex];
-        seriesBooks.forEach(book => {
-          console.log('[UI] Adding book to shelf:', book.title, 'shelf:', currentShelfIndex);
-          renderBook(book, targetShelf);
-        });
-        // Move to next shelf for next series
-        currentShelfIndex++;
-      });
+      sortedFlat.forEach(item => {
+        // Move to next shelf if we've exceeded the estimated items for this shelf
+        if (itemsOnCurrentShelf >= estimatedItemsPerShelf && currentShelfIndex < nShelves - 1) {
+          currentShelfIndex++;
+          itemsOnCurrentShelf = 0;
+        }
 
-      // Render standalone books on remaining shelves
-      standalone.forEach(book => {
-        const targetShelf = shelfEls[currentShelfIndex];
-        renderBook(book, targetShelf);
-        currentShelfIndex = (currentShelfIndex + 1) % shelfEls.length;
+        if (item.type === 'divider') {
+          // Add series divider
+          const divider = document.createElement('div');
+          divider.className = 'series-divider';
+          divider.textContent = '❧';
+          shelfEls[currentShelfIndex]?.appendChild(divider);
+          itemsOnCurrentShelf++;
+        } else {
+          // Add book
+          renderBook(item, shelfEls[currentShelfIndex]);
+          itemsOnCurrentShelf++;
+        }
       });
       break;
   }
+
+  // Update pagination based on number of shelves rendered
+  const shelfCount = document.querySelectorAll('.shelf').length;
+  totalPages = Math.max(1, Math.ceil(shelfCount / SHELVES_PER_PAGE));
+  currentPage = 1; // Reset to page 1 after rehydration
+  renderCurrentPage(); // Show only first page of shelves
+  updatePaginationUI();
 }
 
 export function highlightAtCursor({ x, y }) {
