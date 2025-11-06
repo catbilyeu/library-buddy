@@ -26,7 +26,6 @@ async function registerSW() {
 
 function setupControls() {
   const startBtn = document.querySelector('[data-action="start-scan"]');
-  const stopBtn = document.querySelector('[data-action="stop"]');
   const toggleMotionBtn = document.querySelector('[data-action="toggle-motion"]');
   const exportBtn = document.querySelector('[data-action="export"]');
   const importBtn = document.querySelector('[data-action="import"]');
@@ -38,10 +37,12 @@ function setupControls() {
   const closeModalBtn = document.getElementById('close-modal');
   const deleteBtn = document.getElementById('delete-book');
   const sortFilter = document.getElementById('sort-filter');
-  const themeFilter = document.getElementById('theme-filter');
+  const themeFilterMenu = document.getElementById('theme-filter-menu');
+  const menuBtn = document.getElementById('menu-btn');
+  const settingsMenu = document.getElementById('settings-menu');
+  const closeMenuBtn = document.getElementById('close-menu-btn');
 
   startBtn?.addEventListener('click', startScanMode);
-  stopBtn?.addEventListener('click', stopAll);
   toggleMotionBtn?.addEventListener('click', toggleMotionCursor);
   closeModalBtn?.addEventListener('click', () => modal.close());
   deleteBtn?.addEventListener('click', handleDeleteBook);
@@ -79,7 +80,7 @@ function setupControls() {
   // Load saved theme preference
   const savedTheme = localStorage.getItem('libraryTheme') || 'witchy';
   applyTheme(savedTheme);
-  if (themeFilter) themeFilter.value = savedTheme;
+  if (themeFilterMenu) themeFilterMenu.value = savedTheme;
 
   // Handle sort change
   sortFilter?.addEventListener('change', async (e) => {
@@ -90,12 +91,28 @@ function setupControls() {
     hydrateBooks(books);
   });
 
-  // Handle theme change
-  themeFilter?.addEventListener('change', (e) => {
+  // Handle theme change from settings menu
+  themeFilterMenu?.addEventListener('change', (e) => {
     const newTheme = e.target.value;
     console.log('[App] Changing theme to:', newTheme);
     applyTheme(newTheme);
     localStorage.setItem('libraryTheme', newTheme);
+  });
+
+  // Handle hamburger menu toggle
+  menuBtn?.addEventListener('click', () => {
+    settingsMenu?.classList.remove('hidden');
+  });
+
+  closeMenuBtn?.addEventListener('click', () => {
+    settingsMenu?.classList.add('hidden');
+  });
+
+  // Close menu when clicking outside
+  settingsMenu?.addEventListener('click', (e) => {
+    if (e.target === settingsMenu) {
+      settingsMenu.classList.add('hidden');
+    }
   });
 }
 
@@ -226,6 +243,12 @@ async function handleDeleteBook() {
   if (confirmBookTitle) confirmBookTitle.textContent = `"${bookTitle}"`;
   confirmModal.showModal();
 
+  // Move cursor to confirmation modal so it appears on top
+  const cursor = document.getElementById('magic-cursor');
+  if (cursor && !confirmModal.contains(cursor)) {
+    confirmModal.appendChild(cursor);
+  }
+
   // Wait for user choice
   const userConfirmed = await new Promise((resolve) => {
     const handleConfirm = () => {
@@ -240,6 +263,12 @@ async function handleDeleteBook() {
       confirmBtn.removeEventListener('click', handleConfirm);
       cancelBtn.removeEventListener('click', handleCancel);
       confirmModal.close();
+
+      // Move cursor back to the book modal (since it's still open)
+      const bookModal = document.getElementById('book-modal');
+      if (cursor && confirmModal.contains(cursor) && bookModal) {
+        bookModal.appendChild(cursor);
+      }
     };
 
     confirmBtn.addEventListener('click', handleConfirm);
@@ -268,10 +297,11 @@ async function startScanMode() {
   overlay?.classList.remove('hidden');
   overlay?.setAttribute('aria-hidden', 'false');
 
-  // Ensure hand tracking is stopped while scanning
-  try { destroyHands(); } catch (_) {}
+  // Move cursor into overlay so it's accessible
   const cursor = document.getElementById('magic-cursor');
-  if (cursor) cursor.style.display = 'none';
+  if (cursor && overlay && !overlay.contains(cursor)) {
+    overlay.appendChild(cursor);
+  }
 
   await initCamera();
   await initBarcodeScanner(getVideoEl());
@@ -282,44 +312,55 @@ async function toggleMotionCursor() {
   const cursor = document.getElementById('magic-cursor');
   const toggleBtn = document.getElementById('toggle-motion-btn');
 
-  if (motionCursorEnabled) {
+  if (motionCursorEnabled && motionCursorInitialized) {
     // Disable motion cursor
+    console.log('[App] Disabling motion cursor...');
     cursor.style.display = 'none';
     motionCursorEnabled = false;
+    motionCursorInitialized = false;
     localStorage.setItem('motionCursor', 'off');
     toggleBtn.textContent = 'Enable Motion Cursor';
+
+    // Stop hand tracking and camera
+    destroyHands();
+    await new Promise(resolve => setTimeout(resolve, 100));
+    await stopCamera();
+
     console.log('[App] Motion cursor disabled');
   } else {
     // Enable motion cursor
-    cursor.style.display = 'block';
-    motionCursorEnabled = true;
-    localStorage.setItem('motionCursor', 'on');
-    toggleBtn.textContent = 'Disable Motion Cursor';
-    console.log('[App] Motion cursor enabled');
+    console.log('[App] Enabling motion cursor...');
 
-    // Start hand tracking if not already initialized
-    if (!motionCursorInitialized) {
+    try {
+      // Start hand tracking first
       await startMotionCursor();
+
+      // Only update state if successful
+      cursor.style.display = 'block';
+      motionCursorEnabled = true;
+      motionCursorInitialized = true;
+      localStorage.setItem('motionCursor', 'on');
+      toggleBtn.textContent = 'Disable Motion Cursor';
+
+      console.log('[App] Motion cursor enabled');
+    } catch (error) {
+      console.error('[App] Failed to enable motion cursor:', error);
+      // Reset state on failure
+      cursor.style.display = 'none';
+      motionCursorEnabled = false;
+      motionCursorInitialized = false;
+      localStorage.setItem('motionCursor', 'off');
+      toggleBtn.textContent = 'Enable Motion Cursor';
     }
   }
 }
 
 async function startMotionCursor() {
   console.log('[App] Starting motion cursor...');
-  const cursor = document.getElementById('magic-cursor');
-  cursor.style.display = 'block';
 
-  try {
-    await initCamera();
-    await initHands(getVideoEl());
-    motionCursorInitialized = true;
-    console.log('[App] Motion cursor initialized successfully');
-  } catch (error) {
-    console.error('[App] Failed to initialize motion cursor:', error);
-    alert('Failed to start motion cursor. Please check camera permissions.');
-    motionCursorEnabled = false;
-    cursor.style.display = 'none';
-  }
+  await initCamera();
+  await initHands(getVideoEl());
+  console.log('[App] Motion cursor initialized successfully');
 }
 
 async function stopAll() {
@@ -328,6 +369,12 @@ async function stopAll() {
   const overlay = document.querySelector('[data-test-id="webcam-overlay"]');
   overlay?.classList.add('hidden');
   overlay?.setAttribute('aria-hidden', 'true');
+
+  // Move cursor back to body
+  const cursor = document.getElementById('magic-cursor');
+  if (cursor && overlay && overlay.contains(cursor)) {
+    document.body.appendChild(cursor);
+  }
 
   // Stop in the correct order: scanner first, then hands (which uses camera), then camera itself
   stopBarcodeScanner();
@@ -345,7 +392,6 @@ async function stopAll() {
   motionCursorEnabled = false;
   motionCursorInitialized = false;
   localStorage.setItem('motionCursor', 'off');
-  const cursor = document.getElementById('magic-cursor');
   if (cursor) cursor.style.display = 'none';
   const toggleBtn = document.getElementById('toggle-motion-btn');
   if (toggleBtn) toggleBtn.textContent = 'Enable Motion Cursor';

@@ -703,11 +703,23 @@ export function openBookModal({ id, title, author, cover, color }) {
   }
 
   modal().showModal();
+
+  // Move cursor to be inside the modal so it appears on top
+  const cursor = document.getElementById('magic-cursor');
+  if (cursor && !modal().contains(cursor)) {
+    modal().appendChild(cursor);
+  }
 }
 
 export function closeBookModal() {
   try {
     modal().close();
     currentBookId = null;
+
+    // Move cursor back to body
+    const cursor = document.getElementById('magic-cursor');
+    if (cursor && modal().contains(cursor)) {
+      document.body.appendChild(cursor);
+    }
   } catch (_) {}
 }

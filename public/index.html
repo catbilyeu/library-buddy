@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Library Buddy</title>
   <meta name="theme-color" content="#153328">
-  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="../src/styles/variables.css">
   <link rel="stylesheet" href="../src/styles/base.css">
   <link rel="stylesheet" href="../src/styles/theme.css">
@@ -16,17 +16,13 @@
     <header class="hud">
       <h1>Library Buddy</h1>
       <div class="controls">
-        <button data-action="start-scan">Scan Books</button>
-        <button data-action="stop">Stop</button>
         <button data-action="toggle-motion" id="toggle-motion-btn">Enable Motion Cursor</button>
+        <button data-action="start-scan">Scan Books</button>
         <div class="filter-group">
           <label for="manual-isbn">ISBN:</label>
           <input type="text" id="manual-isbn" placeholder="Enter ISBN" />
           <button id="add-isbn-btn">Add Book</button>
         </div>
-        <button data-action="export">Export JSON</button>
-        <button data-action="import">Import JSON</button>
-        <input type="file" id="import-file" accept="application/json" style="display:none" />
         <div class="filter-group">
           <label for="sort-filter">Sort by:</label>
           <select id="sort-filter">
@@ -36,16 +32,30 @@
             <option value="color">Color</option>
           </select>
         </div>
-        <div class="filter-group">
-          <label for="theme-filter">Theme:</label>
-          <select id="theme-filter">
+        <button id="menu-btn" class="menu-btn" aria-label="Menu">☰</button>
+      </div>
+    </header>
+
+    <!-- Settings Menu -->
+    <div id="settings-menu" class="settings-menu hidden">
+      <div class="settings-content">
+        <h2>Settings</h2>
+        <div class="settings-group">
+          <label for="theme-filter-menu">Theme:</label>
+          <select id="theme-filter-menu">
             <option value="witchy">Witchy</option>
             <option value="colorful">Colorful</option>
             <option value="minimal">Minimal</option>
           </select>
         </div>
+        <div class="settings-group">
+          <button data-action="export" class="settings-btn">Export Library (JSON)</button>
+          <button data-action="import" class="settings-btn">Import Library (JSON)</button>
+          <input type="file" id="import-file" accept="application/json" style="display:none" />
+        </div>
+        <button id="close-menu-btn" class="close-menu-btn">Close</button>
       </div>
-    </header>
+    </div>
 
     <main class="library">
       <section class="shelves" data-test-id="shelves" aria-label="Bookshelves"></section>
@@ -62,8 +72,6 @@
       <span id="page-info" class="page-info">Page 1 of 1</span>
       <button id="next-page" class="page-btn" disabled>Next →</button>
     </footer>
-
-    <div id="magic-cursor" data-test-id="cursor" aria-hidden="true"></div>
 
     <dialog id="book-modal" data-test-id="book-modal">
       <article>
@@ -92,6 +100,8 @@
       </article>
     </dialog>
   </div>
+
+  <div id="magic-cursor" data-test-id="cursor" aria-hidden="true"></div>
 
   <script type="module" src="../src/js/app.js"></script>
 </body>

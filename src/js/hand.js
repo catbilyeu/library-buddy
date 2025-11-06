@@ -10,15 +10,16 @@ let onOpenHandCb = () => {};
 let onWaveCb = () => {};
 let rafId = null;
 let lastGrabFrames = 0;
-const GRAB_THRESHOLD = 0.25; // normalized distance for closed fist (balanced sensitivity)
+let lastFistState = false; // Track previous fist state to only trigger callbacks on state change
+const GRAB_THRESHOLD = 0.22; // normalized distance for closed fist (stricter for more reliable detection)
 const GRAB_HOLD_FRAMES = 3; // need to hold for 3 frames (about 100ms)
-const GRAB_COOLDOWN = 30; // frames to wait after a grab (about 1 second)
+const GRAB_COOLDOWN = 25; // frames to wait after a grab (about 833ms)
 let grabCooldownFrames = 0;
 
 // Smoothing for cursor position
 let smoothedX = 0;
 let smoothedY = 0;
-const SMOOTHING_FACTOR = 0.3; // Lower = more smoothing, higher = more responsive
+const SMOOTHING_FACTOR = 0.65; // Lower = more smoothing, higher = more responsive (increased for modal smoothness)
 
 // Wave detection
 let handPositionHistory = [];
@@ -114,6 +115,8 @@ export function destroyHands() {
   hands = null;
   mpCamera = null;
   lastGrabFrames = 0;
+  lastFistState = false;
+  grabCooldownFrames = 0;
   browseMode = false;
   handPositionHistory = [];
   waveCooldownFrames = 0;
@@ -145,28 +148,31 @@ function onResults(results) {
 
   onMoveCb({ x: smoothedX, y: smoothedY });
 
-  // Track hand position for wave detection
-  handPositionHistory.push({ x: palmCenter.x, y: palmCenter.y, timestamp: Date.now() });
-  if (handPositionHistory.length > WAVE_HISTORY_SIZE) {
-    handPositionHistory.shift();
-  }
+  // Only track wave detection when not in browse mode (performance optimization)
+  if (!browseMode) {
+    // Track hand position for wave detection
+    handPositionHistory.push({ x: palmCenter.x, y: palmCenter.y, timestamp: Date.now() });
+    if (handPositionHistory.length > WAVE_HISTORY_SIZE) {
+      handPositionHistory.shift();
+    }
 
-  // Detect wave gesture (rapid horizontal movement)
-  if (waveCooldownFrames > 0) {
-    waveCooldownFrames--;
-  } else if (handPositionHistory.length >= WAVE_HISTORY_SIZE) {
-    const oldest = handPositionHistory[0];
-    const newest = handPositionHistory[handPositionHistory.length - 1];
-    const horizontalDistance = Math.abs(newest.x - oldest.x);
-    const verticalDistance = Math.abs(newest.y - oldest.y);
-    const timeDiff = newest.timestamp - oldest.timestamp;
+    // Detect wave gesture (rapid horizontal movement)
+    if (waveCooldownFrames > 0) {
+      waveCooldownFrames--;
+    } else if (handPositionHistory.length >= WAVE_HISTORY_SIZE) {
+      const oldest = handPositionHistory[0];
+      const newest = handPositionHistory[handPositionHistory.length - 1];
+      const horizontalDistance = Math.abs(newest.x - oldest.x);
+      const verticalDistance = Math.abs(newest.y - oldest.y);
+      const timeDiff = newest.timestamp - oldest.timestamp;
 
-    // Wave detected: significant horizontal movement, minimal vertical, moderate speed
-    if (horizontalDistance > WAVE_THRESHOLD && verticalDistance < 0.12 && timeDiff < 600) {
-      console.log('[Hand] WAVE detected!', { horizontalDistance, verticalDistance, timeDiff });
-      onWaveCb();
-      waveCooldownFrames = WAVE_COOLDOWN;
-      handPositionHistory = []; // Clear history after detection
+      // Wave detected: significant horizontal movement, minimal vertical, moderate speed
+      if (horizontalDistance > WAVE_THRESHOLD && verticalDistance < 0.12 && timeDiff < 600) {
+        console.log('[Hand] WAVE detected!', { horizontalDistance, verticalDistance, timeDiff });
+        onWaveCb();
+        waveCooldownFrames = WAVE_COOLDOWN;
+        handPositionHistory = []; // Clear history after detection
+      }
     }
   }
 
@@ -205,19 +211,19 @@ function onResults(results) {
       (thumb.z || 0) - (palmBase.z || 0)
     );
 
-    // Require at least 3 fingers closed (don't require thumb - it's harder to detect)
-    const isFist = closedCount >= 3;
+    // Require ALL 4 fingers closed for a proper fist (stricter detection)
+    const thumbClosed = thumbDist < GRAB_THRESHOLD * 1.3;
+    const isFist = closedCount === 4 && thumbClosed;
 
-    // Log more frequently for debugging
-    if (Math.random() < 0.2) {
+    // Log occasionally for debugging (reduced frequency for better performance)
+    if (Math.random() < 0.02) {
       console.log('[Hand] Grab detection:', {
         closedCount,
-        thumbDist,
-        threshold: GRAB_THRESHOLD,
+        thumbDist: thumbDist.toFixed(3),
+        thumbClosed,
         isFist,
-        distances,
-        frames: lastGrabFrames,
-        cooldown: grabCooldownFrames
+        avgDist: (distances.reduce((a, b) => a + b, 0) / distances.length).toFixed(3),
+        frames: lastGrabFrames
       });
     }
 
@@ -228,10 +234,15 @@ function onResults(results) {
         onGrabCb();
         lastGrabFrames = 0; // Reset to prevent repeated grabs
         grabCooldownFrames = GRAB_COOLDOWN; // Start cooldown
+        lastFistState = true;
       }
     } else {
+      // Only call onOpenHandCb when state changes from fist to open (performance optimization)
+      if (lastFistState) {
+        onOpenHandCb();
+        lastFistState = false;
+      }
       lastGrabFrames = 0;
-      onOpenHandCb();
     }
   } else {
     // Original pinch detection for scan mode

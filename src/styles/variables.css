@@ -32,5 +32,6 @@
   --z-hud: 20;
   --z-overlay: 10;
   --z-modal: 40;
-  --z-cursor: 50;
+  --z-settings: 100;
+  --z-cursor: 150;
 }
