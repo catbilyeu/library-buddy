@@ -67,6 +67,25 @@ function setupControls() {
     }
   });
 
+  // Search functionality
+  const searchInput = document.getElementById('search-input');
+  const searchBtn = document.getElementById('search-btn');
+  const clearSearchBtn = document.getElementById('clear-search-btn');
+
+  searchBtn?.addEventListener('click', () => handleSearch(searchInput));
+  searchInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      handleSearch(searchInput);
+    }
+  });
+
+  clearSearchBtn?.addEventListener('click', async () => {
+    if (searchInput) searchInput.value = '';
+    clearSearchBtn.classList.add('hidden');
+    const books = await storage.getBooks();
+    hydrateBooks(books);
+  });
+
   // Export / Import handlers (if buttons exist)
   if (exportBtn) exportBtn.addEventListener('click', handleExport);
   if (importBtn) importBtn.addEventListener('click', () => importInput?.click());
@@ -169,6 +188,52 @@ async function handleImportFile(event) {
   } catch (error) {
     console.error('[App] Import failed:', error);
     alert('Failed to import library. Please check the file format.');
+  }
+}
+
+async function handleSearch(inputElement) {
+  if (!inputElement) return;
+
+  const query = inputElement.value.trim();
+  const clearSearchBtn = document.getElementById('clear-search-btn');
+
+  if (!query) {
+    // If search is empty, show all books and hide clear button
+    const books = await storage.getBooks();
+    hydrateBooks(books);
+    clearSearchBtn?.classList.add('hidden');
+    return;
+  }
+
+  console.log('[App] Searching for:', query);
+
+  try {
+    const books = await storage.getBooks();
+    const queryLower = query.toLowerCase();
+
+    // Case-insensitive search across title, author, and series
+    const matchingBooks = books.filter(book => {
+      const titleMatch = book.title?.toLowerCase().includes(queryLower);
+      const authorMatch = book.author?.toLowerCase().includes(queryLower);
+      const seriesMatch = book.series?.toLowerCase().includes(queryLower);
+      return titleMatch || authorMatch || seriesMatch;
+    });
+
+    if (matchingBooks.length > 0) {
+      console.log('[App] Found', matchingBooks.length, 'matching books');
+      // Display only the matching books
+      hydrateBooks(matchingBooks);
+      // Show the clear button
+      clearSearchBtn?.classList.remove('hidden');
+    } else {
+      console.log('[App] No books found in library');
+      alert(`No books found matching: "${query}"`);
+      // Hide clear button since no results to clear
+      clearSearchBtn?.classList.add('hidden');
+    }
+  } catch (error) {
+    console.error('[App] Search failed:', error);
+    alert('Search failed. Please try again.');
   }
 }
 
