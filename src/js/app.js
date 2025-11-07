@@ -12,6 +12,8 @@ const qs = (sel, root = document) => root.querySelector(sel);
 
 let motionCursorEnabled = true;
 let motionCursorInitialized = false;
+let recognition = null;
+let isListening = false;
 
 // Custom notification system to match theme
 function showNotification(message, icon = 'ℹ️') {
@@ -95,6 +97,10 @@ function setupControls() {
   viewCardBtn?.addEventListener('click', openLibraryCard);
   closeCardBtn?.addEventListener('click', closeLibraryCard);
   addBorrowerBtn?.addEventListener('click', addBorrower);
+
+  // Voice Search button
+  const voiceSearchBtn = document.getElementById('voice-search-btn');
+  voiceSearchBtn?.addEventListener('click', toggleVoiceSearch);
 
   // Pagination buttons
   const prevPageBtn = document.getElementById('prev-page');
@@ -320,6 +326,150 @@ function closeLibraryCard() {
   const bookModal = document.getElementById('book-modal');
   if (cursor && modal.contains(cursor) && bookModal) {
     bookModal.appendChild(cursor);
+  }
+}
+
+// Voice Search Functionality
+function initVoiceRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    console.warn('[Voice] Speech recognition not supported');
+    return false;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+
+  recognition.onstart = () => {
+    console.log('[Voice] Listening started');
+    isListening = true;
+    const voiceBtn = document.getElementById('voice-search-btn');
+    voiceBtn?.classList.add('listening');
+  };
+
+  recognition.onend = () => {
+    console.log('[Voice] Listening ended');
+    isListening = false;
+    const voiceBtn = document.getElementById('voice-search-btn');
+    voiceBtn?.classList.remove('listening');
+  };
+
+  recognition.onerror = (event) => {
+    console.error('[Voice] Recognition error:', event.error);
+    isListening = false;
+    const voiceBtn = document.getElementById('voice-search-btn');
+    voiceBtn?.classList.remove('listening');
+  };
+
+  recognition.onresult = async (event) => {
+    const transcript = event.results[0][0].transcript.toLowerCase();
+    console.log('[Voice] Heard:', transcript);
+    await handleVoiceCommand(transcript);
+  };
+
+  return true;
+}
+
+async function handleVoiceCommand(transcript) {
+  const books = await storage.getBooks();
+
+  // Extract potential book title from the command
+  // Patterns: "is [book] in my library", "do i have [book]", "is anyone borrowing [book]", "who has [book]"
+
+  let bookTitle = null;
+  let isBorrowingQuery = false;
+
+  // Check for borrowing queries
+  if (transcript.includes('borrowing') || transcript.includes('who has') || transcript.includes('who borrowed')) {
+    isBorrowingQuery = true;
+
+    // Extract book title after "borrowing" or "who has"
+    if (transcript.includes('borrowing')) {
+      bookTitle = transcript.split('borrowing')[1]?.trim();
+    } else if (transcript.includes('who has')) {
+      bookTitle = transcript.split('who has')[1]?.trim();
+    } else if (transcript.includes('who borrowed')) {
+      bookTitle = transcript.split('who borrowed')[1]?.trim();
+    }
+  }
+  // Check for library search queries
+  else if (transcript.includes('is') && (transcript.includes('in my library') || transcript.includes('in the library'))) {
+    const match = transcript.match(/is\s+(.+?)\s+in\s+(my\s+)?library/);
+    if (match) {
+      bookTitle = match[1];
+    }
+  }
+  else if (transcript.includes('do i have')) {
+    bookTitle = transcript.split('do i have')[1]?.trim();
+  }
+  else if (transcript.includes('find')) {
+    bookTitle = transcript.split('find')[1]?.trim();
+  }
+  else if (transcript.includes('search for')) {
+    bookTitle = transcript.split('search for')[1]?.trim();
+  }
+  else {
+    // If no specific pattern, try to use the whole transcript as the book title
+    bookTitle = transcript;
+  }
+
+  if (!bookTitle) {
+    await showNotification('Could not understand the book title. Try saying "Is [book name] in my library?"', '🎤');
+    return;
+  }
+
+  // Clean up common words
+  bookTitle = bookTitle.replace(/^(the|a|an)\s+/i, '').trim();
+
+  console.log('[Voice] Searching for:', bookTitle, 'Borrowing query:', isBorrowingQuery);
+
+  // Search for the book (case-insensitive)
+  const foundBook = books.find(book => {
+    const titleMatch = book.title?.toLowerCase().includes(bookTitle);
+    const authorMatch = book.author?.toLowerCase().includes(bookTitle);
+    return titleMatch || authorMatch;
+  });
+
+  if (foundBook) {
+    console.log('[Voice] Found book:', foundBook.title);
+
+    // Open the book modal
+    openBookModal({
+      id: foundBook.id,
+      title: foundBook.title,
+      author: foundBook.author,
+      cover: foundBook.coverUrl,
+      color: foundBook.spineColor
+    });
+
+    // If it's a borrowing query, also open the library card
+    if (isBorrowingQuery) {
+      // Wait a bit for the modal to open
+      setTimeout(() => {
+        openLibraryCard();
+      }, 300);
+    }
+  } else {
+    await showNotification(`"${bookTitle}" is not in your library`, '📚');
+  }
+}
+
+function toggleVoiceSearch() {
+  if (!recognition) {
+    const initialized = initVoiceRecognition();
+    if (!initialized) {
+      showNotification('Voice search is not supported in your browser', '❌');
+      return;
+    }
+  }
+
+  if (isListening) {
+    recognition.stop();
+  } else {
+    recognition.start();
   }
 }
 
