@@ -29,27 +29,107 @@ export function initUI() {
   }
 }
 
-// Generate deterministic book color based on book ID/title
-function getBookColor(bookId, title) {
-  // Use book ID or title to generate a consistent color
-  const seed = bookId || title || 'default';
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = ((hash << 5) - hash) + seed.charCodeAt(i);
-    hash = hash & hash; // Convert to 32bit integer
-  }
-
-  const colors = [
+// Theme-specific color palettes
+const themeColorPalettes = {
+  witchy: [
     '#8B4513', '#A0522D', '#D2691E', // browns
     '#2F4F4F', '#556B2F', '#4B5320', // dark greens
     '#800020', '#8B0000', '#A52A2A', // burgundy/red
-    '#1C3A4A', '#2C4F68', '#1E3A5F', // blues
+    '#1C3A4A', '#2C4F68', '#1E3A5F', // dark blues
     '#3B2F2F', '#4A4A4A', '#2B2B2B', // dark grays
     '#6B4423', '#8B6914', '#9B7653', // tan/ochre
-  ];
+    '#4B3621', '#5D4037', '#6D4C41', // deep browns
+    '#1B5E20', '#2E7D32', '#388E3C', // forest greens
+  ],
+  colorful: [
+    '#F8BBD0', '#F48FB1', '#F06292', // pastel pinks
+    '#E1BEE7', '#CE93D8', '#BA68C8', // pastel purples
+    '#C5CAE9', '#9FA8DA', '#7986CB', // pastel indigos
+    '#B2EBF2', '#80DEEA', '#4DD0E1', // pastel cyans
+    '#C8E6C9', '#A5D6A7', '#81C784', // pastel greens
+    '#FFE0B2', '#FFCC80', '#FFB74D', // pastel oranges
+    '#FFCDD2', '#EF9A9A', '#E57373', // pastel reds
+    '#FFF9C4', '#FFF59D', '#FFF176', // pastel yellows
+    '#FFCCBC', '#FFAB91', '#FF8A65', // pastel coral
+    '#D7CCC8', '#BCAAA4', '#A1887F', // pastel browns
+  ],
+  minimal: [
+    '#8D6E63', '#A1887F', '#BCAAA4', // warm browns
+    '#90A4AE', '#78909C', '#607D8B', // blue grays
+    '#A0887D', '#B39488', '#C7A89C', // taupe
+    '#B0BEC5', '#CFD8DC', '#ECEFF1', // light blue grays
+    '#D7CCC8', '#C5B8A5', '#B8A898', // warm grays
+    '#9E9D89', '#ABA996', '#B8B5A3', // sage
+    '#BCAAA4', '#D7CCC8', '#EFEBE9', // light browns
+    '#B0A090', '#9C8B7A', '#887768', // medium browns
+  ]
+};
 
-  const index = Math.abs(hash) % colors.length;
-  return colors[index];
+// Track which colors have been used (key: series/bookId, value: color)
+const colorAssignments = new Map();
+// Track usage count for each color in current theme
+let colorUsageCounts = new Map();
+
+// Get current theme from body class
+function getCurrentTheme() {
+  if (document.body.classList.contains('theme-colorful')) return 'colorful';
+  if (document.body.classList.contains('theme-minimal')) return 'minimal';
+  return 'witchy';
+}
+
+// Generate deterministic book color based on book ID/title and current theme
+// Books in a series will share the same color
+// Colors are distributed to avoid repeats until all colors have been used
+function getBookColor(bookId, title, series = null) {
+  const theme = getCurrentTheme();
+  const colors = themeColorPalettes[theme];
+
+  // Use series name as the key if book is in a series, otherwise use bookId/title
+  const colorKey = series || bookId || title || 'default';
+
+  // If we've already assigned a color to this series/book, return it
+  if (colorAssignments.has(colorKey)) {
+    return colorAssignments.get(colorKey);
+  }
+
+  // Initialize usage counts for this theme if needed
+  if (colorUsageCounts.size === 0) {
+    colors.forEach(color => colorUsageCounts.set(color, 0));
+  }
+
+  // Find the least-used color
+  let minUsage = Infinity;
+  let leastUsedColors = [];
+
+  for (const [color, count] of colorUsageCounts.entries()) {
+    if (count < minUsage) {
+      minUsage = count;
+      leastUsedColors = [color];
+    } else if (count === minUsage) {
+      leastUsedColors.push(color);
+    }
+  }
+
+  // Use hash to deterministically pick from least-used colors
+  let hash = 0;
+  for (let i = 0; i < colorKey.length; i++) {
+    hash = ((hash << 5) - hash) + colorKey.charCodeAt(i);
+    hash = hash & hash;
+  }
+
+  const selectedColor = leastUsedColors[Math.abs(hash) % leastUsedColors.length];
+
+  // Update tracking
+  colorAssignments.set(colorKey, selectedColor);
+  colorUsageCounts.set(selectedColor, colorUsageCounts.get(selectedColor) + 1);
+
+  return selectedColor;
+}
+
+// Reset color tracking when theme changes
+export function resetColorTracking() {
+  colorAssignments.clear();
+  colorUsageCounts.clear();
 }
 
 export function renderBook(book, targetShelf = null) {
@@ -86,8 +166,9 @@ export function renderBook(book, targetShelf = null) {
   tile.setAttribute('data-author', book.author || '');
   if (book.coverUrl) tile.setAttribute('data-cover', book.coverUrl);
 
-  // Use stored color if available, otherwise generate deterministically
-  const spineColor = book.spineColor || getBookColor(book.id || book.isbn, book.title);
+  // Always generate color based on current theme (don't use stored color)
+  // Pass series name so all books in a series share the same color
+  const spineColor = getBookColor(book.id || book.isbn, book.title, book.series);
 
   // Store the color in data attribute so modal can use it
   tile.setAttribute('data-color', spineColor);

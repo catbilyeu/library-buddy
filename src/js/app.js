@@ -4,7 +4,7 @@
 import { initCamera, stopCamera, getFrameImageData, getVideoEl } from './camera.js';
 import { initBarcodeScanner, stopBarcodeScanner, onIsbnDetected, ocrFromFrame } from './scanner.js';
 import { initHands, onCursorMove, onGrab, onOpenHand, onWave, destroyHands, setBrowseMode } from './hand.js';
-import { renderBook, openBookModal, closeBookModal, initUI, hydrateBooks, highlightAtCursor, getCurrentBookId, setSortMode, getSortMode, nextPage, prevPage } from './ui.js';
+import { renderBook, openBookModal, closeBookModal, initUI, hydrateBooks, highlightAtCursor, getCurrentBookId, setSortMode, getSortMode, nextPage, prevPage, resetColorTracking } from './ui.js';
 import { findBookByISBN, searchBookByText, updateBookCover, detectSeriesFromTitle } from './api.js';
 import { storage, events } from './storage.js';
 
@@ -147,11 +147,15 @@ function setupControls() {
   });
 
   // Handle theme change from settings menu
-  themeFilterMenu?.addEventListener('change', (e) => {
+  themeFilterMenu?.addEventListener('change', async (e) => {
     const newTheme = e.target.value;
     console.log('[App] Changing theme to:', newTheme);
     applyTheme(newTheme);
     localStorage.setItem('libraryTheme', newTheme);
+    // Reset color tracking and re-render books with new theme colors
+    resetColorTracking();
+    const books = await storage.getBooks();
+    hydrateBooks(books);
   });
 
   // Handle hamburger menu toggle
