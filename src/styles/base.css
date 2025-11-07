@@ -522,3 +522,202 @@ p { margin: 0 0 var(--space-3); }
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(200,164,82,0.4);
 }
+
+/* Library Card Modal */
+.library-card-modal {
+  border: none;
+  padding: 0;
+  background: transparent;
+  max-width: 95vw;
+  max-height: 95vh;
+}
+
+.library-card-modal[open] {
+  animation: bookFlipIn 0.4s ease-out;
+}
+
+.library-card-modal::backdrop {
+  background: rgba(0,0,0,0.9);
+}
+
+.library-card-content {
+  background: transparent;
+  padding: var(--space-6);
+  position: relative;
+}
+
+.close-card-btn {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-round);
+  background: rgba(200,164,82,0.9);
+  color: #000;
+  border: 2px solid rgba(255,255,255,0.3);
+  font-size: 1.3rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  transition: all 0.2s ease;
+  z-index: 100;
+}
+
+.close-card-btn:hover {
+  background: rgba(200,164,82,1);
+  transform: scale(1.1);
+}
+
+.library-card {
+  background: linear-gradient(135deg, #f5f0e8 0%, #ebe5d9 100%);
+  border: 3px solid #8b7355;
+  border-radius: var(--radius-2);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.5);
+  max-width: 600px;
+  min-height: 400px;
+  padding: var(--space-6);
+  font-family: 'Courier New', monospace;
+  color: #2c2416;
+  position: relative;
+}
+
+.library-card::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  border: 2px solid rgba(139,115,85,0.3);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.card-header {
+  border-bottom: 2px solid #8b7355;
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
+  text-align: center;
+}
+
+.card-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #2c2416;
+  margin: 0 0 var(--space-2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.card-author {
+  font-size: 1.1rem;
+  color: #5c4a3a;
+  margin: 0;
+  font-style: italic;
+}
+
+.card-body {
+  min-height: 200px;
+  margin-bottom: var(--space-4);
+}
+
+.borrower-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.borrower-entry {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  background: rgba(255,255,255,0.5);
+  border: 1px solid rgba(139,115,85,0.3);
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+.borrower-name {
+  font-weight: 600;
+  color: #2c2416;
+}
+
+.borrower-date {
+  color: #5c4a3a;
+  font-size: 0.9rem;
+}
+
+.remove-borrower-btn {
+  background: #c44;
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s ease;
+}
+
+.remove-borrower-btn:hover {
+  background: #a33;
+}
+
+.card-footer {
+  border-top: 2px solid #8b7355;
+  padding-top: var(--space-4);
+}
+
+.add-borrower-form {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.add-borrower-form input {
+  flex: 1;
+  min-width: 150px;
+  padding: 8px 12px;
+  border: 2px solid #8b7355;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.8);
+  font-family: 'Courier New', monospace;
+  color: #2c2416;
+  font-size: 0.95rem;
+}
+
+.add-borrower-form input:focus {
+  outline: none;
+  border-color: #c8a452;
+  box-shadow: 0 0 8px rgba(200,164,82,0.3);
+}
+
+.add-borrower-form button {
+  padding: 8px 20px;
+  background: #8b7355;
+  color: #f5f0e8;
+  border: 2px solid #6d5a45;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.add-borrower-form button:hover {
+  background: #6d5a45;
+  transform: translateY(-2px);
+}
+
+.empty-card-message {
+  text-align: center;
+  color: #5c4a3a;
+  font-style: italic;
+  padding: var(--space-6);
+}

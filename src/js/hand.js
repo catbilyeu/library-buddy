@@ -8,6 +8,7 @@ let onMoveCb = () => {};
 let onGrabCb = () => {};
 let onOpenHandCb = () => {};
 let onWaveCb = () => {};
+let onSwipeUpCb = () => {};
 let rafId = null;
 let lastGrabFrames = 0;
 let lastFistState = false; // Track previous fist state to only trigger callbacks on state change
@@ -27,6 +28,12 @@ const WAVE_HISTORY_SIZE = 12; // Track last 12 positions for smoother detection
 const WAVE_THRESHOLD = 0.35; // Minimum horizontal distance to travel (normalized, more deliberate)
 const WAVE_COOLDOWN = 75; // Cooldown between wave detections (2.5 seconds)
 let waveCooldownFrames = 0;
+
+// Swipe up detection
+const SWIPE_HISTORY_SIZE = 8; // Track last 8 positions for swipe detection
+const SWIPE_UP_THRESHOLD = 0.25; // Minimum vertical distance to travel upward
+const SWIPE_COOLDOWN = 60; // Cooldown between swipe detections (2 seconds)
+let swipeCooldownFrames = 0;
 let videoElRef = null;
 let hands = null;
 let mpCamera = null;
@@ -38,6 +45,7 @@ export function onCursorMove(cb) { onMoveCb = cb; }
 export function onGrab(cb) { onGrabCb = cb; }
 export function onOpenHand(cb) { onOpenHandCb = cb; }
 export function onWave(cb) { onWaveCb = cb; }
+export function onSwipeUp(cb) { onSwipeUpCb = cb; }
 export function setBrowseMode(enabled) { browseMode = enabled; }
 
 export async function initHands(videoEl) {
@@ -120,6 +128,7 @@ export function destroyHands() {
   browseMode = false;
   handPositionHistory = [];
   waveCooldownFrames = 0;
+  swipeCooldownFrames = 0;
   smoothedX = 0;
   smoothedY = 0;
   console.log('[Hand] Hand tracking destroyed');
@@ -148,14 +157,14 @@ function onResults(results) {
 
   onMoveCb({ x: smoothedX, y: smoothedY });
 
-  // Only track wave detection when not in browse mode (performance optimization)
-  if (!browseMode) {
-    // Track hand position for wave detection
-    handPositionHistory.push({ x: palmCenter.x, y: palmCenter.y, timestamp: Date.now() });
-    if (handPositionHistory.length > WAVE_HISTORY_SIZE) {
-      handPositionHistory.shift();
-    }
+  // Track hand position for wave and swipe detection
+  handPositionHistory.push({ x: palmCenter.x, y: palmCenter.y, timestamp: Date.now() });
+  if (handPositionHistory.length > Math.max(WAVE_HISTORY_SIZE, SWIPE_HISTORY_SIZE)) {
+    handPositionHistory.shift();
+  }
 
+  // Only detect wave when not in browse mode (performance optimization)
+  if (!browseMode) {
     // Detect wave gesture (rapid horizontal movement)
     if (waveCooldownFrames > 0) {
       waveCooldownFrames--;
@@ -171,6 +180,27 @@ function onResults(results) {
         console.log('[Hand] WAVE detected!', { horizontalDistance, verticalDistance, timeDiff });
         onWaveCb();
         waveCooldownFrames = WAVE_COOLDOWN;
+        handPositionHistory = []; // Clear history after detection
+      }
+    }
+  }
+
+  // Detect swipe up gesture (in browse mode for library card)
+  if (browseMode) {
+    if (swipeCooldownFrames > 0) {
+      swipeCooldownFrames--;
+    } else if (handPositionHistory.length >= SWIPE_HISTORY_SIZE) {
+      const oldest = handPositionHistory[handPositionHistory.length - SWIPE_HISTORY_SIZE];
+      const newest = handPositionHistory[handPositionHistory.length - 1];
+      const verticalDistance = oldest.y - newest.y; // Positive means upward movement
+      const horizontalDistance = Math.abs(newest.x - oldest.x);
+      const timeDiff = newest.timestamp - oldest.timestamp;
+
+      // Swipe up detected: significant upward movement, minimal horizontal, fast
+      if (verticalDistance > SWIPE_UP_THRESHOLD && horizontalDistance < 0.15 && timeDiff < 400) {
+        console.log('[Hand] SWIPE UP detected!', { verticalDistance, horizontalDistance, timeDiff });
+        onSwipeUpCb();
+        swipeCooldownFrames = SWIPE_COOLDOWN;
         handPositionHistory = []; // Clear history after detection
       }
     }

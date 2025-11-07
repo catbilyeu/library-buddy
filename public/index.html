@@ -87,6 +87,7 @@
           <p class="book-author">Author</p>
         </header>
         <footer>
+          <button id="view-card-btn" class="card-btn">📋 Library Card</button>
           <button id="close-modal">Close</button>
           <button id="delete-book" class="delete-btn">Remove from Shelf</button>
         </footer>
@@ -113,6 +114,30 @@
         <footer class="notification-footer">
           <button id="notification-ok" class="notification-ok-btn">OK</button>
         </footer>
+      </article>
+    </dialog>
+
+    <dialog id="library-card-modal" class="library-card-modal">
+      <article class="library-card-content">
+        <button class="close-card-btn" id="close-card-btn" aria-label="Close Library Card">✕</button>
+        <div class="library-card">
+          <div class="card-header">
+            <h2 class="card-title" id="card-book-title">Book Title</h2>
+            <p class="card-author" id="card-book-author">Author Name</p>
+          </div>
+          <div class="card-body">
+            <div class="borrower-list" id="borrower-list">
+              <!-- Borrower entries will be added here -->
+            </div>
+          </div>
+          <div class="card-footer">
+            <div class="add-borrower-form">
+              <input type="text" id="borrower-name" placeholder="Borrower name" />
+              <input type="date" id="borrow-date" />
+              <button id="add-borrower-btn">Add Borrower</button>
+            </div>
+          </div>
+        </div>
       </article>
     </dialog>
   </div>

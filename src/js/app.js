@@ -3,7 +3,7 @@
 
 import { initCamera, stopCamera, getFrameImageData, getVideoEl } from './camera.js';
 import { initBarcodeScanner, stopBarcodeScanner, onIsbnDetected, ocrFromFrame } from './scanner.js';
-import { initHands, onCursorMove, onGrab, onOpenHand, onWave, destroyHands, setBrowseMode } from './hand.js';
+import { initHands, onCursorMove, onGrab, onOpenHand, onWave, onSwipeUp, destroyHands, setBrowseMode } from './hand.js';
 import { renderBook, openBookModal, closeBookModal, initUI, hydrateBooks, highlightAtCursor, getCurrentBookId, setSortMode, getSortMode, nextPage, prevPage, resetColorTracking } from './ui.js';
 import { findBookByISBN, searchBookByText, updateBookCover, detectSeriesFromTitle } from './api.js';
 import { storage, events } from './storage.js';
@@ -86,6 +86,15 @@ function setupControls() {
   // Close scanner button
   const closeScannerBtn = document.getElementById('close-scanner-btn');
   closeScannerBtn?.addEventListener('click', stopAll);
+
+  // Library Card buttons
+  const viewCardBtn = document.getElementById('view-card-btn');
+  const closeCardBtn = document.getElementById('close-card-btn');
+  const addBorrowerBtn = document.getElementById('add-borrower-btn');
+
+  viewCardBtn?.addEventListener('click', openLibraryCard);
+  closeCardBtn?.addEventListener('click', closeLibraryCard);
+  addBorrowerBtn?.addEventListener('click', addBorrower);
 
   // Pagination buttons
   const prevPageBtn = document.getElementById('prev-page');
@@ -192,6 +201,126 @@ function applyTheme(theme) {
   document.body.classList.add(`theme-${theme}`);
 
   console.log('[App] Applied theme:', theme);
+}
+
+// Library Card Management
+async function openLibraryCard() {
+  const bookId = getCurrentBookId();
+  if (!bookId) return;
+
+  const book = (await storage.getBooks()).find(b => (b.id || b.isbn) === bookId);
+  if (!book) return;
+
+  const modal = document.getElementById('library-card-modal');
+  const titleEl = document.getElementById('card-book-title');
+  const authorEl = document.getElementById('card-book-author');
+  const borrowerList = document.getElementById('borrower-list');
+
+  titleEl.textContent = book.title || 'Untitled';
+  authorEl.textContent = book.author || 'Unknown Author';
+
+  // Render borrower list
+  renderBorrowerList(book);
+
+  modal.showModal();
+
+  // Move cursor to card modal
+  const cursor = document.getElementById('magic-cursor');
+  if (cursor && !modal.contains(cursor)) {
+    modal.appendChild(cursor);
+  }
+}
+
+function renderBorrowerList(book) {
+  const borrowerList = document.getElementById('borrower-list');
+  const borrowers = book.borrowers || [];
+
+  if (borrowers.length === 0) {
+    borrowerList.innerHTML = '<p class="empty-card-message">No borrowing history</p>';
+    return;
+  }
+
+  borrowerList.innerHTML = borrowers.map((borrower, index) => `
+    <div class="borrower-entry">
+      <span class="borrower-name">${borrower.name}</span>
+      <span class="borrower-date">${borrower.date}</span>
+      <button class="remove-borrower-btn" data-index="${index}">Return</button>
+    </div>
+  `).join('');
+
+  // Add event listeners to remove buttons
+  borrowerList.querySelectorAll('.remove-borrower-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const index = parseInt(btn.getAttribute('data-index'));
+      await removeBorrower(index);
+    });
+  });
+}
+
+async function addBorrower() {
+  const bookId = getCurrentBookId();
+  if (!bookId) return;
+
+  const nameInput = document.getElementById('borrower-name');
+  const dateInput = document.getElementById('borrow-date');
+
+  const name = nameInput.value.trim();
+  const date = dateInput.value;
+
+  if (!name) {
+    await showNotification('Please enter a borrower name', 'ℹ️');
+    return;
+  }
+
+  if (!date) {
+    await showNotification('Please select a borrow date', 'ℹ️');
+    return;
+  }
+
+  const books = await storage.getBooks();
+  const book = books.find(b => (b.id || b.isbn) === bookId);
+  if (!book) return;
+
+  if (!book.borrowers) {
+    book.borrowers = [];
+  }
+
+  book.borrowers.push({ name, date });
+  await storage.addBook(book);
+
+  // Clear inputs
+  nameInput.value = '';
+  dateInput.value = '';
+
+  // Re-render list
+  renderBorrowerList(book);
+}
+
+async function removeBorrower(index) {
+  const bookId = getCurrentBookId();
+  if (!bookId) return;
+
+  const books = await storage.getBooks();
+  const book = books.find(b => (b.id || b.isbn) === bookId);
+  if (!book || !book.borrowers) return;
+
+  book.borrowers.splice(index, 1);
+  await storage.addBook(book);
+
+  // Re-render list
+  renderBorrowerList(book);
+}
+
+function closeLibraryCard() {
+  const modal = document.getElementById('library-card-modal');
+  modal.close();
+
+  // Move cursor back to book modal
+  const cursor = document.getElementById('magic-cursor');
+  const bookModal = document.getElementById('book-modal');
+  if (cursor && modal.contains(cursor) && bookModal) {
+    bookModal.appendChild(cursor);
+  }
 }
 
 async function handleExport() {
@@ -613,6 +742,18 @@ function setupEvents() {
     if (overlay && !overlay.classList.contains('hidden')) {
       console.log('[App] Wave detected, closing scanner');
       stopAll();
+    }
+  });
+
+  // Swipe up to open library card (when book modal is open)
+  onSwipeUp(() => {
+    const bookModal = document.getElementById('book-modal');
+    const libraryCardModal = document.getElementById('library-card-modal');
+
+    // Only open library card if book modal is open and library card is not already open
+    if (bookModal && bookModal.open && (!libraryCardModal || !libraryCardModal.open)) {
+      console.log('[App] Swipe up detected, opening library card');
+      openLibraryCard();
     }
   });
 
