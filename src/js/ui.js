@@ -505,14 +505,30 @@ export function hydrateBooks(books = []) {
   updatePaginationUI();
 }
 
-export function highlightAtCursor({ x, y }) {
-  // Remove book highlights
-  document.querySelectorAll('.book-tile').forEach(el => el.classList.remove('highlight'));
+let lastHighlightedElement = null;
 
-  // Remove button highlights
-  document.querySelectorAll('button').forEach(btn => btn.classList.remove('cursor-hover'));
+export function highlightAtCursor({ x, y }) {
+  // Use pointer-events: none on cursor to ensure we detect elements beneath it correctly
+  const cursor = document.getElementById('magic-cursor');
+  const originalPointerEvents = cursor ? cursor.style.pointerEvents : null;
+  if (cursor) cursor.style.pointerEvents = 'none';
 
   const el = document.elementFromPoint(x, y);
+
+  if (cursor && originalPointerEvents !== null) {
+    cursor.style.pointerEvents = originalPointerEvents;
+  }
+
+  // Check if we're hovering over the same element - if so, don't re-process
+  if (el === lastHighlightedElement) {
+    return;
+  }
+
+  // Remove previous highlights
+  document.querySelectorAll('.book-tile').forEach(el => el.classList.remove('highlight'));
+  document.querySelectorAll('button').forEach(btn => btn.classList.remove('cursor-hover'));
+
+  lastHighlightedElement = el;
 
   // Highlight books
   const tile = el?.closest?.('.book-tile');
@@ -521,9 +537,10 @@ export function highlightAtCursor({ x, y }) {
     return;
   }
 
-  // Highlight buttons
-  if (el && el.tagName === 'BUTTON') {
-    el.classList.add('cursor-hover');
+  // Highlight buttons (check if element is a button or inside a button)
+  const button = el?.tagName === 'BUTTON' ? el : el?.closest?.('button');
+  if (button) {
+    button.classList.add('cursor-hover');
   }
 }
 

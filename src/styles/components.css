@@ -30,9 +30,9 @@
 
 /* Motion cursor hover effect for buttons */
 button.cursor-hover {
-  outline: 2px solid var(--accent-500);
-  outline-offset: 2px;
-  box-shadow: 0 0 16px rgba(139,216,189,0.4);
-  transform: scale(1.05);
-  transition: all 0.2s ease;
+  outline: 3px solid var(--accent-500);
+  outline-offset: 3px;
+  box-shadow: 0 0 20px rgba(139,216,189,0.6), 0 0 40px rgba(139,216,189,0.3);
+  /* Remove transform to prevent layout shift and cursor flicker */
+  transition: outline 0.15s ease, box-shadow 0.15s ease;
 }

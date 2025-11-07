@@ -13,6 +13,42 @@ const qs = (sel, root = document) => root.querySelector(sel);
 let motionCursorEnabled = true;
 let motionCursorInitialized = false;
 
+// Custom notification system to match theme
+function showNotification(message, icon = 'ℹ️') {
+  const modal = document.getElementById('notification-modal');
+  const messageEl = document.getElementById('notification-message');
+  const iconEl = document.getElementById('notification-icon');
+  const okBtn = document.getElementById('notification-ok');
+
+  if (!modal || !messageEl || !iconEl || !okBtn) return;
+
+  messageEl.textContent = message;
+  iconEl.textContent = icon;
+  modal.showModal();
+
+  // Move cursor to notification modal so it appears on top
+  const cursor = document.getElementById('magic-cursor');
+  if (cursor && !modal.contains(cursor)) {
+    modal.appendChild(cursor);
+  }
+
+  return new Promise((resolve) => {
+    const handleClose = () => {
+      okBtn.removeEventListener('click', handleClose);
+      modal.close();
+
+      // Move cursor back to body
+      if (cursor && modal.contains(cursor)) {
+        document.body.appendChild(cursor);
+      }
+
+      resolve();
+    };
+
+    okBtn.addEventListener('click', handleClose);
+  });
+}
+
 async function registerSW() {
   if ('serviceWorker' in navigator) {
     try {
@@ -184,10 +220,10 @@ async function handleImportFile(event) {
     }
 
     console.log('[App] Import complete');
-    alert(`Successfully imported ${books.length} books!`);
+    await showNotification(`Successfully imported ${books.length} books!`, '✅');
   } catch (error) {
     console.error('[App] Import failed:', error);
-    alert('Failed to import library. Please check the file format.');
+    await showNotification('Failed to import library. Please check the file format.', '❌');
   }
 }
 
@@ -221,19 +257,41 @@ async function handleSearch(inputElement) {
 
     if (matchingBooks.length > 0) {
       console.log('[App] Found', matchingBooks.length, 'matching books');
-      // Display only the matching books
-      hydrateBooks(matchingBooks);
-      // Show the clear button
-      clearSearchBtn?.classList.remove('hidden');
+
+      // Check for exact match or single result
+      const exactMatch = matchingBooks.find(book =>
+        book.title?.toLowerCase() === queryLower ||
+        book.author?.toLowerCase() === queryLower
+      );
+
+      if (exactMatch || matchingBooks.length === 1) {
+        // Open modal directly for exact match or single result
+        const book = exactMatch || matchingBooks[0];
+        console.log('[App] Opening book modal for:', book.title);
+        openBookModal({
+          id: book.id,
+          title: book.title,
+          author: book.author,
+          cover: book.coverUrl,
+          color: book.spineColor
+        });
+        inputElement.value = '';
+        clearSearchBtn?.classList.add('hidden');
+      } else {
+        // Display all matching books
+        hydrateBooks(matchingBooks);
+        // Show the clear button
+        clearSearchBtn?.classList.remove('hidden');
+      }
     } else {
       console.log('[App] No books found in library');
-      alert(`No books found matching: "${query}"`);
+      await showNotification(`No books found matching: "${query}"`, '🔍');
       // Hide clear button since no results to clear
       clearSearchBtn?.classList.add('hidden');
     }
   } catch (error) {
     console.error('[App] Search failed:', error);
-    alert('Search failed. Please try again.');
+    await showNotification('Search failed. Please try again.', '❌');
   }
 }
 
@@ -242,7 +300,7 @@ async function handleManualIsbn(inputElement) {
 
   const isbn = inputElement.value.trim();
   if (!isbn) {
-    alert('Please enter an ISBN');
+    await showNotification('Please enter an ISBN', 'ℹ️');
     return;
   }
 
@@ -278,11 +336,11 @@ async function handleManualIsbn(inputElement) {
       inputElement.value = '';
       console.log('[App] Book added successfully:', book.title);
     } else {
-      alert('Book not found. Please check the ISBN and try again.');
+      await showNotification('Book not found. Please check the ISBN and try again.', '📚');
     }
   } catch (error) {
     console.error('[App] Failed to fetch book:', error);
-    alert('Failed to fetch book data. Please try again.');
+    await showNotification('Failed to fetch book data. Please try again.', '❌');
   }
 }
 
@@ -292,7 +350,7 @@ async function handleDeleteBook() {
 
   if (!bookId) {
     console.error('[App] No book ID found');
-    alert('Cannot delete: book ID is missing');
+    await showNotification('Cannot delete: book ID is missing', '❌');
     return;
   }
 
@@ -353,7 +411,7 @@ async function handleDeleteBook() {
     closeBookModal();
   } catch (error) {
     console.error('[App] Failed to remove book:', error);
-    alert('Failed to remove book. Please try again.');
+    await showNotification('Failed to remove book. Please try again.', '❌');
   }
 }
 

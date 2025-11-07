@@ -11,9 +11,9 @@ let onWaveCb = () => {};
 let rafId = null;
 let lastGrabFrames = 0;
 let lastFistState = false; // Track previous fist state to only trigger callbacks on state change
-const GRAB_THRESHOLD = 0.22; // normalized distance for closed fist (stricter for more reliable detection)
-const GRAB_HOLD_FRAMES = 3; // need to hold for 3 frames (about 100ms)
-const GRAB_COOLDOWN = 25; // frames to wait after a grab (about 833ms)
+const GRAB_THRESHOLD = 0.35; // normalized distance for closed fist (more forgiving for reliability)
+const GRAB_HOLD_FRAMES = 2; // need to hold for 2 frames (about 67ms)
+const GRAB_COOLDOWN = 15; // frames to wait after a grab (about 500ms)
 let grabCooldownFrames = 0;
 
 // Smoothing for cursor position
@@ -211,19 +211,23 @@ function onResults(results) {
       (thumb.z || 0) - (palmBase.z || 0)
     );
 
-    // Require ALL 4 fingers closed for a proper fist (stricter detection)
-    const thumbClosed = thumbDist < GRAB_THRESHOLD * 1.3;
-    const isFist = closedCount === 4 && thumbClosed;
+    // More forgiving: require at least 2 fingers closed OR thumb + 1 finger
+    const thumbClosed = thumbDist < GRAB_THRESHOLD * 1.5;
+    // Calculate average distance of all fingers
+    const avgDist = distances.reduce((a, b) => a + b, 0) / distances.length;
+    // Use multiple criteria: either enough fingers closed OR low average distance
+    const isFist = (closedCount >= 2 && thumbClosed) || (avgDist < GRAB_THRESHOLD * 1.2 && thumbClosed);
 
-    // Log occasionally for debugging (reduced frequency for better performance)
-    if (Math.random() < 0.02) {
+    // Log more frequently for debugging grab issues
+    if (Math.random() < 0.15) {
       console.log('[Hand] Grab detection:', {
         closedCount,
         thumbDist: thumbDist.toFixed(3),
         thumbClosed,
+        avgDist: avgDist.toFixed(3),
         isFist,
-        avgDist: (distances.reduce((a, b) => a + b, 0) / distances.length).toFixed(3),
-        frames: lastGrabFrames
+        frames: lastGrabFrames,
+        cooldown: grabCooldownFrames
       });
     }
 
