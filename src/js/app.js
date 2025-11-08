@@ -65,13 +65,24 @@ async function registerSW() {
 
 function setupControls() {
   const startBtn = document.querySelector('[data-action="start-scan"]');
-  const toggleMotionBtn = document.querySelector('[data-action="toggle-motion"]');
+  const toggleHandsFreeBtn = document.getElementById('toggle-hands-free-btn');
+  const toggleCursorBtn = document.getElementById('toggle-cursor-btn');
+  const toggleVoiceBtn = document.getElementById('toggle-voice-btn');
   const exportBtn = document.querySelector('[data-action="export"]');
   const importBtn = document.querySelector('[data-action="import"]');
   const importInput = document.getElementById('import-file');
-  // Initialize toggle button label based on saved preference
-  const isEnabled = localStorage.getItem('handsFreeMode') === 'on';
-  if (toggleMotionBtn) toggleMotionBtn.textContent = isEnabled ? 'Disable Hands Free Mode' : 'Enable Hands Free Mode';
+
+  // Initialize button states based on saved preferences
+  const cursorEnabled = localStorage.getItem('handCursorEnabled') === 'on';
+  const voiceEnabled = localStorage.getItem('voiceCommandsEnabled') === 'on';
+  if (toggleCursorBtn && cursorEnabled) toggleCursorBtn.classList.add('active');
+  if (toggleVoiceBtn && voiceEnabled) toggleVoiceBtn.classList.add('active');
+
+  // Update hands-free button text based on state
+  if (toggleHandsFreeBtn && cursorEnabled && voiceEnabled) {
+    toggleHandsFreeBtn.textContent = 'Disable Hands Free Mode';
+  }
+
   const modal = document.getElementById('book-modal');
   const closeModalBtn = document.getElementById('close-modal');
   const deleteBtn = document.getElementById('delete-book');
@@ -82,7 +93,9 @@ function setupControls() {
   const closeMenuBtn = document.getElementById('close-menu-btn');
 
   startBtn?.addEventListener('click', startScanMode);
-  toggleMotionBtn?.addEventListener('click', toggleHandsFreeMode);
+  toggleHandsFreeBtn?.addEventListener('click', toggleHandsFreeMode);
+  toggleCursorBtn?.addEventListener('click', toggleHandCursor);
+  toggleVoiceBtn?.addEventListener('click', toggleVoiceCommands);
   closeModalBtn?.addEventListener('click', () => modal.close());
   deleteBtn?.addEventListener('click', handleDeleteBook);
 
@@ -1125,18 +1138,109 @@ async function startScanMode() {
 }
 
 async function toggleHandsFreeMode() {
-  const cursor = document.getElementById('magic-cursor');
-  const toggleBtn = document.getElementById('toggle-motion-btn');
+  const toggleBtn = document.getElementById('toggle-hands-free-btn');
+  const cursorBtn = document.getElementById('toggle-cursor-btn');
+  const voiceBtn = document.getElementById('toggle-voice-btn');
 
-  if (handsFreeModeEnabled && handsFreeModeInitialized) {
-    // Disable hands free mode
+  const cursorEnabled = localStorage.getItem('handCursorEnabled') === 'on';
+  const voiceEnabled = localStorage.getItem('voiceCommandsEnabled') === 'on';
+  const bothEnabled = cursorEnabled && voiceEnabled;
+
+  if (bothEnabled) {
+    // Disable both
     console.log('[App] Disabling hands free mode...');
+
+    if (cursorEnabled) await toggleHandCursor();
+    if (voiceEnabled) await toggleVoiceCommands();
+
+    toggleBtn.textContent = 'Enable Hands Free Mode';
+    console.log('[App] Hands free mode disabled');
+  } else {
+    // Enable both
+    console.log('[App] Enabling hands free mode...');
+
+    if (!cursorEnabled) await toggleHandCursor();
+    if (!voiceEnabled) await toggleVoiceCommands();
+
+    toggleBtn.textContent = 'Disable Hands Free Mode';
+    console.log('[App] Hands free mode enabled');
+  }
+}
+
+async function toggleHandCursor() {
+  const cursor = document.getElementById('magic-cursor');
+  const toggleBtn = document.getElementById('toggle-cursor-btn');
+  const handsFreeBtn = document.getElementById('toggle-hands-free-btn');
+  const handCursorEnabled = localStorage.getItem('handCursorEnabled') === 'on';
+
+  if (handCursorEnabled) {
+    // Disable hand cursor
+    console.log('[App] Disabling hand cursor...');
     cursor.style.display = 'none';
     handsFreeModeEnabled = false;
     handsFreeModeInitialized = false;
+    localStorage.setItem('handCursorEnabled', 'off');
+    toggleBtn.classList.remove('active');
+
+    // Stop hand tracking and camera
+    destroyHands();
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Only stop camera if voice is also disabled
+    const voiceEnabled = localStorage.getItem('voiceCommandsEnabled') === 'on';
+    if (!voiceEnabled) {
+      await stopCamera();
+    }
+
+    // Update hands-free button
+    if (handsFreeBtn) handsFreeBtn.textContent = 'Enable Hands Free Mode';
+
+    console.log('[App] Hand cursor disabled');
+  } else {
+    // Enable hand cursor
+    console.log('[App] Enabling hand cursor...');
+
+    try {
+      // Start camera if not already started
+      await initCamera();
+      await initHands(getVideoEl());
+      setBrowseMode(true); // Enable browse mode for grab detection
+
+      cursor.style.display = 'block';
+      handsFreeModeEnabled = true;
+      handsFreeModeInitialized = true;
+      localStorage.setItem('handCursorEnabled', 'on');
+      toggleBtn.classList.add('active');
+
+      // Update hands-free button if both are now enabled
+      const voiceEnabled = localStorage.getItem('voiceCommandsEnabled') === 'on';
+      if (handsFreeBtn && voiceEnabled) {
+        handsFreeBtn.textContent = 'Disable Hands Free Mode';
+      }
+
+      console.log('[App] Hand cursor enabled');
+    } catch (error) {
+      console.error('[App] Failed to enable hand cursor:', error);
+      cursor.style.display = 'none';
+      handsFreeModeEnabled = false;
+      handsFreeModeInitialized = false;
+      localStorage.setItem('handCursorEnabled', 'off');
+      toggleBtn.classList.remove('active');
+    }
+  }
+}
+
+async function toggleVoiceCommands() {
+  const toggleBtn = document.getElementById('toggle-voice-btn');
+  const handsFreeBtn = document.getElementById('toggle-hands-free-btn');
+  const voiceEnabled = localStorage.getItem('voiceCommandsEnabled') === 'on';
+
+  if (voiceEnabled) {
+    // Disable voice commands
+    console.log('[App] Disabling voice commands...');
     continuousListening = false;
-    localStorage.setItem('handsFreeMode', 'off');
-    toggleBtn.textContent = 'Enable Hands Free Mode';
+    localStorage.setItem('voiceCommandsEnabled', 'off');
+    toggleBtn.classList.remove('active');
 
     // Stop voice recognition
     if (recognition) {
@@ -1152,37 +1256,47 @@ async function toggleHandsFreeMode() {
       }
     }
 
-    // Stop hand tracking and camera
-    destroyHands();
-    await new Promise(resolve => setTimeout(resolve, 100));
-    await stopCamera();
+    // Only stop camera if hand cursor is also disabled
+    const handCursorEnabled = localStorage.getItem('handCursorEnabled') === 'on';
+    if (!handCursorEnabled) {
+      await stopCamera();
+    }
 
-    console.log('[App] Hands free mode disabled');
+    // Update hands-free button
+    if (handsFreeBtn) handsFreeBtn.textContent = 'Enable Hands Free Mode';
+
+    console.log('[App] Voice commands disabled');
   } else {
-    // Enable hands free mode
-    console.log('[App] Enabling hands free mode...');
+    // Enable voice commands
+    console.log('[App] Enabling voice commands...');
 
     try {
-      // Start hand tracking first
-      await startHandsFreeMode();
+      // Start camera if not already started
+      await initCamera();
 
-      // Only update state if successful
-      cursor.style.display = 'block';
-      handsFreeModeEnabled = true;
-      handsFreeModeInitialized = true;
-      localStorage.setItem('handsFreeMode', 'on');
-      toggleBtn.textContent = 'Disable Hands Free Mode';
+      // Start continuous voice recognition
+      const voiceInitialized = initVoiceRecognition(true);
+      if (voiceInitialized) {
+        recognition.start();
+        continuousListening = true;
+        localStorage.setItem('voiceCommandsEnabled', 'on');
+        toggleBtn.classList.add('active');
 
-      console.log('[App] Hands free mode enabled');
+        // Update hands-free button if both are now enabled
+        const handCursorEnabled = localStorage.getItem('handCursorEnabled') === 'on';
+        if (handsFreeBtn && handCursorEnabled) {
+          handsFreeBtn.textContent = 'Disable Hands Free Mode';
+        }
+
+        console.log('[App] Voice commands enabled');
+      } else {
+        throw new Error('Voice recognition not available');
+      }
     } catch (error) {
-      console.error('[App] Failed to enable hands free mode:', error);
-      // Reset state on failure
-      cursor.style.display = 'none';
-      handsFreeModeEnabled = false;
-      handsFreeModeInitialized = false;
+      console.error('[App] Failed to enable voice commands:', error);
       continuousListening = false;
-      localStorage.setItem('handsFreeMode', 'off');
-      toggleBtn.textContent = 'Enable Hands Free Mode';
+      localStorage.setItem('voiceCommandsEnabled', 'off');
+      toggleBtn.classList.remove('active');
     }
   }
 }
@@ -1237,10 +1351,14 @@ async function stopAll() {
   handsFreeModeEnabled = false;
   handsFreeModeInitialized = false;
   continuousListening = false;
-  localStorage.setItem('handsFreeMode', 'off');
+  localStorage.setItem('handCursorEnabled', 'off');
+  localStorage.setItem('voiceCommandsEnabled', 'off');
   if (cursor) cursor.style.display = 'none';
-  const toggleBtn = document.getElementById('toggle-motion-btn');
-  if (toggleBtn) toggleBtn.textContent = 'Enable Hands Free Mode';
+
+  const toggleCursorBtn = document.getElementById('toggle-cursor-btn');
+  const toggleVoiceBtn = document.getElementById('toggle-voice-btn');
+  if (toggleCursorBtn) toggleCursorBtn.classList.remove('active');
+  if (toggleVoiceBtn) toggleVoiceBtn.classList.remove('active');
 
   // Stop voice recognition
   if (recognition && isListening) {
@@ -1430,15 +1548,24 @@ async function boot() {
     }, 300); // Debounce resize
   });
 
-  // Do not auto-start the camera; wait for explicit user action.
-  const wasEnabled = localStorage.getItem('handsFreeMode') === 'on';
-  if (wasEnabled) {
-    console.log('[App] Restoring hands free mode from previous session...');
-    handsFreeModeEnabled = true;
-    handsFreeModeInitialized = false;
-    await startHandsFreeMode();
+  // Restore hand cursor and voice commands from previous session if they were enabled
+  const handCursorWasEnabled = localStorage.getItem('handCursorEnabled') === 'on';
+  const voiceWasEnabled = localStorage.getItem('voiceCommandsEnabled') === 'on';
+
+  if (handCursorWasEnabled || voiceWasEnabled) {
+    console.log('[App] Restoring features from previous session...');
+
+    if (handCursorWasEnabled) {
+      console.log('[App] Restoring hand cursor...');
+      await toggleHandCursor();
+    }
+
+    if (voiceWasEnabled) {
+      console.log('[App] Restoring voice commands...');
+      await toggleVoiceCommands();
+    }
   } else {
-    console.log('[App] Hands free mode is opt-in. Use the toggle to enable.');
+    console.log('[App] Hand cursor and voice commands are opt-in. Use the toggle buttons to enable.');
   }
 }
 
