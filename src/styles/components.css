@@ -36,3 +36,28 @@ button.cursor-hover {
   /* Remove transform to prevent layout shift and cursor flicker */
   transition: outline 0.15s ease, box-shadow 0.15s ease;
 }
+
+/* ISBN input group in settings menu */
+.isbn-input-group {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.isbn-input-group #manual-isbn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: var(--radius-1);
+  background: rgba(0,0,0,0.2);
+  color: var(--text-100);
+  font-size: 0.95rem;
+}
+
+.isbn-input-group #manual-isbn::placeholder {
+  color: rgba(255,255,255,0.4);
+}
+
+.isbn-input-group #add-isbn-btn {
+  white-space: nowrap;
+}

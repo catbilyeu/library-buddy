@@ -241,12 +241,12 @@ function onResults(results) {
       (thumb.z || 0) - (palmBase.z || 0)
     );
 
-    // More forgiving: require at least 2 fingers closed OR thumb + 1 finger
-    const thumbClosed = thumbDist < GRAB_THRESHOLD * 1.5;
+    // Require more fingers to be closed to avoid false positives with open hands
+    const thumbClosed = thumbDist < GRAB_THRESHOLD * 1.2;
     // Calculate average distance of all fingers
     const avgDist = distances.reduce((a, b) => a + b, 0) / distances.length;
-    // Use multiple criteria: either enough fingers closed OR low average distance
-    const isFist = (closedCount >= 2 && thumbClosed) || (avgDist < GRAB_THRESHOLD * 1.2 && thumbClosed);
+    // Stricter criteria: require at least 3 fingers closed AND thumb closed
+    const isFist = closedCount >= 3 && thumbClosed && avgDist < GRAB_THRESHOLD * 1.1;
 
     // Log more frequently for debugging grab issues
     if (Math.random() < 0.15) {

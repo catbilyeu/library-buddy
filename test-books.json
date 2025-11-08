@@ -1,0 +1,952 @@
+[
+  {
+    "id": "9780765326355",
+    "isbn": "9780765326355",
+    "title": "The Way of Kings",
+    "author": "Brandon Sanderson",
+    "series": "The Stormlight Archive",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": ""
+  },
+  {
+    "isbn": "9780765326362",
+    "title": "Words of Radiance",
+    "author": "Brandon Sanderson",
+    "series": "The Stormlight Archive",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765326362"
+  },
+  {
+    "isbn": "9780765326386",
+    "title": "Oathbringer",
+    "author": "Brandon Sanderson",
+    "series": "The Stormlight Archive",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765326386"
+  },
+  {
+    "isbn": "9780765326409",
+    "title": "Rhythm of War",
+    "author": "Brandon Sanderson",
+    "series": "The Stormlight Archive",
+    "seriesNumber": 4,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765326409"
+  },
+  {
+    "isbn": "9780765311788",
+    "title": "The Final Empire",
+    "author": "Brandon Sanderson",
+    "series": "Mistborn",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765311788"
+  },
+  {
+    "isbn": "9780765316882",
+    "title": "The Well of Ascension",
+    "author": "Brandon Sanderson",
+    "series": "Mistborn",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765316882"
+  },
+  {
+    "isbn": "9780765316899",
+    "title": "The Hero of Ages",
+    "author": "Brandon Sanderson",
+    "series": "Mistborn",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765316899"
+  },
+  {
+    "isbn": "9780553103540",
+    "title": "A Game of Thrones",
+    "author": "George R.R. Martin",
+    "series": "A Song of Ice and Fire",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780553103540"
+  },
+  {
+    "isbn": "9780553108033",
+    "title": "A Clash of Kings",
+    "author": "George R.R. Martin",
+    "series": "A Song of Ice and Fire",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780553108033"
+  },
+  {
+    "isbn": "9780553106633",
+    "title": "A Storm of Swords",
+    "author": "George R.R. Martin",
+    "series": "A Song of Ice and Fire",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780553106633"
+  },
+  {
+    "isbn": "9780553801507",
+    "title": "A Feast for Crows",
+    "author": "George R.R. Martin",
+    "series": "A Song of Ice and Fire",
+    "seriesNumber": 4,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780553801507"
+  },
+  {
+    "isbn": "9780553801477",
+    "title": "A Dance with Dragons",
+    "author": "George R.R. Martin",
+    "series": "A Song of Ice and Fire",
+    "seriesNumber": 5,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780553801477"
+  },
+  {
+    "isbn": "9780316015844",
+    "title": "The Name of the Wind",
+    "author": "Patrick Rothfuss",
+    "series": "The Kingkiller Chronicle",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316015844"
+  },
+  {
+    "isbn": "9780756404734",
+    "title": "The Wise Man's Fear",
+    "author": "Patrick Rothfuss",
+    "series": "The Kingkiller Chronicle",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780756404734"
+  },
+  {
+    "isbn": "9780316219181",
+    "title": "The Blade Itself",
+    "author": "Joe Abercrombie",
+    "series": "The First Law",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316219181"
+  },
+  {
+    "isbn": "9780316219198",
+    "title": "Before They Are Hanged",
+    "author": "Joe Abercrombie",
+    "series": "The First Law",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316219198"
+  },
+  {
+    "isbn": "9780316219204",
+    "title": "Last Argument of Kings",
+    "author": "Joe Abercrombie",
+    "series": "The First Law",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316219204"
+  },
+  {
+    "isbn": "9781250178633",
+    "title": "A Deadly Education",
+    "author": "Naomi Novik",
+    "series": "The Scholomance",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9781250178633"
+  },
+  {
+    "isbn": "9781250178640",
+    "title": "The Last Graduate",
+    "author": "Naomi Novik",
+    "series": "The Scholomance",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9781250178640"
+  },
+  {
+    "isbn": "9781250178657",
+    "title": "The Golden Enclaves",
+    "author": "Naomi Novik",
+    "series": "The Scholomance",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9781250178657"
+  },
+  {
+    "isbn": "9781250766564",
+    "title": "Fourth Wing",
+    "author": "Rebecca Yarros",
+    "series": "The Empyrean",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9781250766564"
+  },
+  {
+    "isbn": "9781649374172",
+    "title": "Iron Flame",
+    "author": "Rebecca Yarros",
+    "series": "The Empyrean",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9781649374172"
+  },
+  {
+    "isbn": "9780425256848",
+    "title": "The Eye of the World",
+    "author": "Robert Jordan",
+    "series": "The Wheel of Time",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780425256848"
+  },
+  {
+    "isbn": "9780812511819",
+    "title": "The Great Hunt",
+    "author": "Robert Jordan",
+    "series": "The Wheel of Time",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780812511819"
+  },
+  {
+    "isbn": "9780812513714",
+    "title": "The Dragon Reborn",
+    "author": "Robert Jordan",
+    "series": "The Wheel of Time",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780812513714"
+  },
+  {
+    "isbn": "9780316080682",
+    "title": "Gardens of the Moon",
+    "author": "Steven Erikson",
+    "series": "Malazan Book of the Fallen",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316080682"
+  },
+  {
+    "isbn": "9780765348784",
+    "title": "Deadhouse Gates",
+    "author": "Steven Erikson",
+    "series": "Malazan Book of the Fallen",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765348784"
+  },
+  {
+    "isbn": "9780765348791",
+    "title": "Memories of Ice",
+    "author": "Steven Erikson",
+    "series": "Malazan Book of the Fallen",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765348791"
+  },
+  {
+    "isbn": "9780756402983",
+    "title": "The Lies of Locke Lamora",
+    "author": "Scott Lynch",
+    "series": "Gentleman Bastard",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780756402983"
+  },
+  {
+    "isbn": "9780553804683",
+    "title": "Red Seas Under Red Skies",
+    "author": "Scott Lynch",
+    "series": "Gentleman Bastard",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780553804683"
+  },
+  {
+    "isbn": "9780316127325",
+    "title": "The Republic of Thieves",
+    "author": "Scott Lynch",
+    "series": "Gentleman Bastard",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316127325"
+  },
+  {
+    "isbn": "9780316229296",
+    "title": "The Fifth Season",
+    "author": "N.K. Jemisin",
+    "series": "The Broken Earth",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316229296"
+  },
+  {
+    "isbn": "9780316229265",
+    "title": "The Obelisk Gate",
+    "author": "N.K. Jemisin",
+    "series": "The Broken Earth",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316229265"
+  },
+  {
+    "isbn": "9780316229241",
+    "title": "The Stone Sky",
+    "author": "N.K. Jemisin",
+    "series": "The Broken Earth",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316229241"
+  },
+  {
+    "isbn": "9780316404396",
+    "title": "Assassin's Apprentice",
+    "author": "Robin Hobb",
+    "series": "Farseer Trilogy",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316404396"
+  },
+  {
+    "isbn": "9780553573398",
+    "title": "Royal Assassin",
+    "author": "Robin Hobb",
+    "series": "Farseer Trilogy",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780553573398"
+  },
+  {
+    "isbn": "9780553565690",
+    "title": "Assassin's Quest",
+    "author": "Robin Hobb",
+    "series": "Farseer Trilogy",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780553565690"
+  },
+  {
+    "isbn": "9780765326379",
+    "title": "Elantris",
+    "author": "Brandon Sanderson",
+    "series": null,
+    "seriesNumber": null,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765326379"
+  },
+  {
+    "isbn": "9780765350381",
+    "title": "Warbreaker",
+    "author": "Brandon Sanderson",
+    "series": null,
+    "seriesNumber": null,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765350381"
+  },
+  {
+    "isbn": "9780765377135",
+    "title": "The Emperor's Soul",
+    "author": "Brandon Sanderson",
+    "series": null,
+    "seriesNumber": null,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765377135"
+  },
+  {
+    "isbn": "9780765365279",
+    "title": "Mistborn: Secret History",
+    "author": "Brandon Sanderson",
+    "series": "Mistborn",
+    "seriesNumber": 3.5,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765365279"
+  },
+  {
+    "isbn": "9780765378552",
+    "title": "The Alloy of Law",
+    "author": "Brandon Sanderson",
+    "series": "Mistborn Era 2",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765378552"
+  },
+  {
+    "isbn": "9780765378569",
+    "title": "Shadows of Self",
+    "author": "Brandon Sanderson",
+    "series": "Mistborn Era 2",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765378569"
+  },
+  {
+    "isbn": "9780765378583",
+    "title": "The Bands of Mourning",
+    "author": "Brandon Sanderson",
+    "series": "Mistborn Era 2",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765378583"
+  },
+  {
+    "isbn": "9781250318640",
+    "title": "Uprooted",
+    "author": "Naomi Novik",
+    "series": null,
+    "seriesNumber": null,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9781250318640"
+  },
+  {
+    "isbn": "9781250138286",
+    "title": "Spinning Silver",
+    "author": "Naomi Novik",
+    "series": null,
+    "seriesNumber": null,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9781250138286"
+  },
+  {
+    "isbn": "9780316209281",
+    "title": "Prince of Thorns",
+    "author": "Mark Lawrence",
+    "series": "The Broken Empire",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316209281"
+  },
+  {
+    "isbn": "9780062025296",
+    "title": "King of Thorns",
+    "author": "Mark Lawrence",
+    "series": "The Broken Empire",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780062025296"
+  },
+  {
+    "isbn": "9780062223319",
+    "title": "Emperor of Thorns",
+    "author": "Mark Lawrence",
+    "series": "The Broken Empire",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780062223319"
+  },
+  {
+    "isbn": "9780756407919",
+    "title": "The Black Prism",
+    "author": "Brent Weeks",
+    "series": "Lightbringer",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780756407919"
+  },
+  {
+    "isbn": "9780316246279",
+    "title": "The Blinding Knife",
+    "author": "Brent Weeks",
+    "series": "Lightbringer",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316246279"
+  },
+  {
+    "isbn": "9780316251204",
+    "title": "The Broken Eye",
+    "author": "Brent Weeks",
+    "series": "Lightbringer",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316251204"
+  },
+  {
+    "isbn": "9780316251235",
+    "title": "The Blood Mirror",
+    "author": "Brent Weeks",
+    "series": "Lightbringer",
+    "seriesNumber": 4,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316251235"
+  },
+  {
+    "isbn": "9780316251259",
+    "title": "The Burning White",
+    "author": "Brent Weeks",
+    "series": "Lightbringer",
+    "seriesNumber": 5,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316251259"
+  },
+  {
+    "isbn": "9780316033664",
+    "title": "The Way of Shadows",
+    "author": "Brent Weeks",
+    "series": "Night Angel",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316033664"
+  },
+  {
+    "isbn": "9780316033671",
+    "title": "Shadow's Edge",
+    "author": "Brent Weeks",
+    "series": "Night Angel",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316033671"
+  },
+  {
+    "isbn": "9780316033695",
+    "title": "Beyond the Shadows",
+    "author": "Brent Weeks",
+    "series": "Night Angel",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316033695"
+  },
+  {
+    "isbn": "9780425275269",
+    "title": "The Poppy War",
+    "author": "R.F. Kuang",
+    "series": "The Poppy War",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780425275269"
+  },
+  {
+    "isbn": "9780062662606",
+    "title": "The Dragon Republic",
+    "author": "R.F. Kuang",
+    "series": "The Poppy War",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780062662606"
+  },
+  {
+    "isbn": "9780062662644",
+    "title": "The Burning God",
+    "author": "R.F. Kuang",
+    "series": "The Poppy War",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780062662644"
+  },
+  {
+    "isbn": "9780316154697",
+    "title": "Red Sister",
+    "author": "Mark Lawrence",
+    "series": "Book of the Ancestor",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316154697"
+  },
+  {
+    "isbn": "9780316405140",
+    "title": "Grey Sister",
+    "author": "Mark Lawrence",
+    "series": "Book of the Ancestor",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316405140"
+  },
+  {
+    "isbn": "9780316405188",
+    "title": "Holy Sister",
+    "author": "Mark Lawrence",
+    "series": "Book of the Ancestor",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316405188"
+  },
+  {
+    "isbn": "9781250169761",
+    "title": "The Priory of the Orange Tree",
+    "author": "Samantha Shannon",
+    "series": null,
+    "seriesNumber": null,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9781250169761"
+  },
+  {
+    "isbn": "9780316382434",
+    "title": "Rage of Dragons",
+    "author": "Evan Winter",
+    "series": "The Burning",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316382434"
+  },
+  {
+    "isbn": "9780316489805",
+    "title": "The Fires of Vengeance",
+    "author": "Evan Winter",
+    "series": "The Burning",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316489805"
+  },
+  {
+    "isbn": "9780765383105",
+    "title": "The Sword of Kaigen",
+    "author": "M.L. Wang",
+    "series": null,
+    "seriesNumber": null,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765383105"
+  },
+  {
+    "isbn": "9780765326409",
+    "title": "The Bear and the Nightingale",
+    "author": "Katherine Arden",
+    "series": "Winternight Trilogy",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765326409"
+  },
+  {
+    "isbn": "9780765389107",
+    "title": "The Girl in the Tower",
+    "author": "Katherine Arden",
+    "series": "Winternight Trilogy",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765389107"
+  },
+  {
+    "isbn": "9780399593529",
+    "title": "The Winter of the Witch",
+    "author": "Katherine Arden",
+    "series": "Winternight Trilogy",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780399593529"
+  },
+  {
+    "isbn": "9781250175892",
+    "title": "The City of Brass",
+    "author": "S.A. Chakraborty",
+    "series": "The Daevabad Trilogy",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9781250175892"
+  },
+  {
+    "isbn": "9780062678140",
+    "title": "The Kingdom of Copper",
+    "author": "S.A. Chakraborty",
+    "series": "The Daevabad Trilogy",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780062678140"
+  },
+  {
+    "isbn": "9780062678164",
+    "title": "The Empire of Gold",
+    "author": "S.A. Chakraborty",
+    "series": "The Daevabad Trilogy",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780062678164"
+  },
+  {
+    "isbn": "9780316049085",
+    "title": "The Hundred Thousand Kingdoms",
+    "author": "N.K. Jemisin",
+    "series": "The Inheritance Trilogy",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316049085"
+  },
+  {
+    "isbn": "9780316043946",
+    "title": "The Broken Kingdoms",
+    "author": "N.K. Jemisin",
+    "series": "The Inheritance Trilogy",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316043946"
+  },
+  {
+    "isbn": "9780316043953",
+    "title": "The Kingdom of Gods",
+    "author": "N.K. Jemisin",
+    "series": "The Inheritance Trilogy",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316043953"
+  },
+  {
+    "isbn": "9780316387316",
+    "title": "The Bone Witch",
+    "author": "Rin Chupeco",
+    "series": "The Bone Witch",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316387316"
+  },
+  {
+    "isbn": "9781492635994",
+    "title": "The Heart Forger",
+    "author": "Rin Chupeco",
+    "series": "The Bone Witch",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9781492635994"
+  },
+  {
+    "isbn": "9781492648925",
+    "title": "The Shadowglass",
+    "author": "Rin Chupeco",
+    "series": "The Bone Witch",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9781492648925"
+  },
+  {
+    "isbn": "9780316129084",
+    "title": "Blood Song",
+    "author": "Anthony Ryan",
+    "series": "Raven's Shadow",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316129084"
+  },
+  {
+    "isbn": "9780425266908",
+    "title": "Tower Lord",
+    "author": "Anthony Ryan",
+    "series": "Raven's Shadow",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780425266908"
+  },
+  {
+    "isbn": "9780425279366",
+    "title": "Queen of Fire",
+    "author": "Anthony Ryan",
+    "series": "Raven's Shadow",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780425279366"
+  },
+  {
+    "isbn": "9780316387699",
+    "title": "Senlin Ascends",
+    "author": "Josiah Bancroft",
+    "series": "The Books of Babel",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316387699"
+  },
+  {
+    "isbn": "9780316517867",
+    "title": "Arm of the Sphinx",
+    "author": "Josiah Bancroft",
+    "series": "The Books of Babel",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316517867"
+  },
+  {
+    "isbn": "9780316517881",
+    "title": "The Hod King",
+    "author": "Josiah Bancroft",
+    "series": "The Books of Babel",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316517881"
+  },
+  {
+    "isbn": "9780316517898",
+    "title": "The Fall of Babel",
+    "author": "Josiah Bancroft",
+    "series": "The Books of Babel",
+    "seriesNumber": 4,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316517898"
+  },
+  {
+    "isbn": "9781501171345",
+    "title": "The Poppy War",
+    "author": "R.F. Kuang",
+    "series": null,
+    "seriesNumber": null,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9781501171345"
+  },
+  {
+    "isbn": "9780316529259",
+    "title": "Jade City",
+    "author": "Fonda Lee",
+    "series": "The Green Bone Saga",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316529259"
+  },
+  {
+    "isbn": "9780316440905",
+    "title": "Jade War",
+    "author": "Fonda Lee",
+    "series": "The Green Bone Saga",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316440905"
+  },
+  {
+    "isbn": "9780316440950",
+    "title": "Jade Legacy",
+    "author": "Fonda Lee",
+    "series": "The Green Bone Saga",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316440950"
+  },
+  {
+    "isbn": "9780765378545",
+    "title": "The Shadow of What Was Lost",
+    "author": "James Islington",
+    "series": "The Licanius Trilogy",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765378545"
+  },
+  {
+    "isbn": "9780765378569",
+    "title": "An Echo of Things to Come",
+    "author": "James Islington",
+    "series": "The Licanius Trilogy",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765378569"
+  },
+  {
+    "isbn": "9780765378576",
+    "title": "The Light of All That Falls",
+    "author": "James Islington",
+    "series": "The Licanius Trilogy",
+    "seriesNumber": 3,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780765378576"
+  },
+  {
+    "isbn": "9780316505482",
+    "title": "Kings of the Wyld",
+    "author": "Nicholas Eames",
+    "series": "The Band",
+    "seriesNumber": 1,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316505482"
+  },
+  {
+    "isbn": "9780316457064",
+    "title": "Bloody Rose",
+    "author": "Nicholas Eames",
+    "series": "The Band",
+    "seriesNumber": 2,
+    "genre": "Fantasy",
+    "coverUrl": "",
+    "id": "9780316457064"
+  }
+]

@@ -17,12 +17,6 @@
       <h1>Library Buddy</h1>
       <div class="controls">
         <button data-action="toggle-motion" id="toggle-motion-btn">Enable Hands Free Mode</button>
-        <button data-action="start-scan">Scan Books</button>
-        <div class="filter-group">
-          <label for="manual-isbn">ISBN:</label>
-          <input type="text" id="manual-isbn" placeholder="Enter ISBN" />
-          <button id="add-isbn-btn">Add Book</button>
-        </div>
         <div class="filter-group">
           <label for="sort-filter">Sort by:</label>
           <select id="sort-filter">
@@ -45,7 +39,17 @@
     <!-- Settings Menu -->
     <div id="settings-menu" class="settings-menu hidden">
       <div class="settings-content">
-        <h2>Settings</h2>
+        <h2>Menu</h2>
+        <div class="settings-group">
+          <button data-action="start-scan" class="settings-btn">📷 Scan Books</button>
+        </div>
+        <div class="settings-group">
+          <label for="manual-isbn">Add Book by ISBN:</label>
+          <div class="isbn-input-group">
+            <input type="text" id="manual-isbn" placeholder="Enter ISBN" />
+            <button id="add-isbn-btn" class="settings-btn">Add</button>
+          </div>
+        </div>
         <div class="settings-group">
           <label for="theme-filter-menu">Theme:</label>
           <select id="theme-filter-menu">
