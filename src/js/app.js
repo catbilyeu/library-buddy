@@ -4,16 +4,17 @@
 import { initCamera, stopCamera, getFrameImageData, getVideoEl } from './camera.js';
 import { initBarcodeScanner, stopBarcodeScanner, onIsbnDetected, ocrFromFrame } from './scanner.js';
 import { initHands, onCursorMove, onGrab, onOpenHand, onWave, onSwipeUp, destroyHands, setBrowseMode } from './hand.js';
-import { renderBook, openBookModal, closeBookModal, initUI, hydrateBooks, highlightAtCursor, getCurrentBookId, setSortMode, getSortMode, nextPage, prevPage, resetColorTracking } from './ui.js';
+import { renderBook, openBookModal, closeBookModal, initUI, hydrateBooks, highlightAtCursor, getCurrentBookId, setSortMode, getSortMode, nextPage, prevPage, resetColorTracking, getBookColor } from './ui.js';
 import { findBookByISBN, searchBookByText, updateBookCover, detectSeriesFromTitle } from './api.js';
 import { storage, events } from './storage.js';
 
 const qs = (sel, root = document) => root.querySelector(sel);
 
-let motionCursorEnabled = true;
-let motionCursorInitialized = false;
+let handsFreeModeEnabled = true;
+let handsFreeModeInitialized = false;
 let recognition = null;
 let isListening = false;
+let continuousListening = false; // Track if we're in continuous mode
 
 // Custom notification system to match theme
 function showNotification(message, icon = 'ℹ️') {
@@ -69,8 +70,8 @@ function setupControls() {
   const importBtn = document.querySelector('[data-action="import"]');
   const importInput = document.getElementById('import-file');
   // Initialize toggle button label based on saved preference
-  const isEnabled = localStorage.getItem('motionCursor') === 'on';
-  if (toggleMotionBtn) toggleMotionBtn.textContent = isEnabled ? 'Disable Motion Cursor' : 'Enable Motion Cursor';
+  const isEnabled = localStorage.getItem('handsFreeMode') === 'on';
+  if (toggleMotionBtn) toggleMotionBtn.textContent = isEnabled ? 'Disable Hands Free Mode' : 'Enable Hands Free Mode';
   const modal = document.getElementById('book-modal');
   const closeModalBtn = document.getElementById('close-modal');
   const deleteBtn = document.getElementById('delete-book');
@@ -81,7 +82,7 @@ function setupControls() {
   const closeMenuBtn = document.getElementById('close-menu-btn');
 
   startBtn?.addEventListener('click', startScanMode);
-  toggleMotionBtn?.addEventListener('click', toggleMotionCursor);
+  toggleMotionBtn?.addEventListener('click', toggleHandsFreeMode);
   closeModalBtn?.addEventListener('click', () => modal.close());
   deleteBtn?.addEventListener('click', handleDeleteBook);
 
@@ -169,8 +170,18 @@ function setupControls() {
     localStorage.setItem('libraryTheme', newTheme);
     // Reset color tracking and re-render books with new theme colors
     resetColorTracking();
+
+    // Regenerate colors for all books with new theme palette
     const books = await storage.getBooks();
-    hydrateBooks(books);
+    for (const book of books) {
+      // Generate new color from new theme
+      book.spineColor = getBookColor(book.id || book.isbn, book.title, book.series);
+      await storage.addBook(book);
+    }
+
+    // Re-render with new colors
+    const updatedBooks = await storage.getBooks();
+    hydrateBooks(updatedBooks);
   });
 
   // Handle hamburger menu toggle
@@ -330,7 +341,7 @@ function closeLibraryCard() {
 }
 
 // Voice Search Functionality
-function initVoiceRecognition() {
+function initVoiceRecognition(continuous = false) {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
@@ -339,12 +350,13 @@ function initVoiceRecognition() {
   }
 
   recognition = new SpeechRecognition();
-  recognition.continuous = false;
+  recognition.continuous = continuous;
   recognition.interimResults = false;
   recognition.lang = 'en-US';
+  continuousListening = continuous;
 
   recognition.onstart = () => {
-    console.log('[Voice] Listening started');
+    console.log('[Voice] Listening started (continuous:', continuous, ')');
     isListening = true;
     const voiceBtn = document.getElementById('voice-search-btn');
     voiceBtn?.classList.add('listening');
@@ -355,6 +367,16 @@ function initVoiceRecognition() {
     isListening = false;
     const voiceBtn = document.getElementById('voice-search-btn');
     voiceBtn?.classList.remove('listening');
+
+    // Restart if in continuous mode and hands free mode is still enabled
+    if (continuousListening && handsFreeModeEnabled && handsFreeModeInitialized) {
+      console.log('[Voice] Restarting continuous listening...');
+      setTimeout(() => {
+        if (recognition && continuousListening) {
+          recognition.start();
+        }
+      }, 100);
+    }
   };
 
   recognition.onerror = (event) => {
@@ -362,11 +384,22 @@ function initVoiceRecognition() {
     isListening = false;
     const voiceBtn = document.getElementById('voice-search-btn');
     voiceBtn?.classList.remove('listening');
+
+    // Restart if in continuous mode and it's not a fatal error
+    if (continuousListening && handsFreeModeEnabled && event.error !== 'no-speech') {
+      console.log('[Voice] Restarting after error...');
+      setTimeout(() => {
+        if (recognition && continuousListening) {
+          recognition.start();
+        }
+      }, 1000);
+    }
   };
 
   recognition.onresult = async (event) => {
-    const transcript = event.results[0][0].transcript.toLowerCase();
+    const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
     console.log('[Voice] Heard:', transcript);
+    console.log('[Voice] Confidence:', event.results[event.results.length - 1][0].confidence);
     await handleVoiceCommand(transcript);
   };
 
@@ -374,6 +407,157 @@ function initVoiceRecognition() {
 }
 
 async function handleVoiceCommand(transcript) {
+  // Check for "disable hands free" command (with flexible matching for "hands free" / "hands-free" / "handsfree")
+  const disablePatterns = [
+    'disable hands free',
+    'disable hands-free',
+    'disable handsfree',
+    'turn off hands free',
+    'turn off hands-free',
+    'turn off handsfree',
+    'stop hands free',
+    'stop hands-free',
+    'stop handsfree'
+  ];
+
+  if (disablePatterns.some(pattern => transcript.includes(pattern))) {
+    console.log('[Voice] Disabling hands free mode');
+    await toggleHandsFreeMode();
+    return;
+  }
+
+  // Check for "remove" or "delete" book command
+  if (transcript.includes('remove') || transcript.includes('delete')) {
+    console.log('[Voice] Remove book command detected');
+
+    // Extract book title after "remove" or "delete"
+    let bookTitle = null;
+    if (transcript.includes('remove')) {
+      // Pattern: "remove [book] from my library"
+      const match = transcript.match(/remove\s+(.+?)\s+from\s+(my\s+)?library/);
+      if (match) {
+        bookTitle = match[1];
+      } else {
+        // Just "remove [book]"
+        bookTitle = transcript.split('remove')[1]?.trim();
+      }
+    } else if (transcript.includes('delete')) {
+      // Pattern: "delete [book] from my library"
+      const match = transcript.match(/delete\s+(.+?)\s+from\s+(my\s+)?library/);
+      if (match) {
+        bookTitle = match[1];
+      } else {
+        // Just "delete [book]"
+        bookTitle = transcript.split('delete')[1]?.trim();
+      }
+    }
+
+    if (!bookTitle) {
+      await showNotification('Could not understand which book to remove. Try "Remove [book name] from my library"', '🎤');
+      return;
+    }
+
+    // Clean up common words
+    bookTitle = bookTitle.replace(/^(the|a|an)\s+/i, '').trim();
+
+    console.log('[Voice] Attempting to remove book:', bookTitle);
+
+    // Search for the book (case-insensitive)
+    const books = await storage.getBooks();
+    const foundBook = books.find(book => {
+      const titleMatch = book.title?.toLowerCase().includes(bookTitle);
+      const authorMatch = book.author?.toLowerCase().includes(bookTitle);
+      return titleMatch || authorMatch;
+    });
+
+    if (foundBook) {
+      console.log('[Voice] Found book to remove:', foundBook.title);
+
+      // Remove the book
+      try {
+        await storage.removeBook(foundBook.id || foundBook.isbn);
+        await showNotification(`"${foundBook.title}" has been removed from your library`, '✅');
+        console.log('[Voice] Book removed successfully');
+      } catch (error) {
+        console.error('[Voice] Failed to remove book:', error);
+        await showNotification('Failed to remove book. Please try again.', '❌');
+      }
+    } else {
+      await showNotification(`"${bookTitle}" was not found in your library`, '📚');
+    }
+
+    return;
+  }
+
+  // Check for "open scanner" command (context: should NOT contain "book")
+  if ((transcript.includes('open scanner') || transcript.includes('scan') || transcript.includes('scanner')) && !transcript.includes('book')) {
+    console.log('[Voice] Opening scanner');
+    await startScanMode();
+    return;
+  }
+
+  // Check for "close" command (context: should NOT contain "book" or "scanner")
+  if (transcript.includes('close') && !transcript.includes('book') && !transcript.includes('scanner')) {
+    console.log('[Voice] Close command detected');
+
+    // Close notification modal if open
+    const notificationModal = document.getElementById('notification-modal');
+    if (notificationModal && notificationModal.open) {
+      console.log('[Voice] Closing notification modal');
+      const okBtn = document.getElementById('notification-ok');
+      okBtn?.click();
+      return;
+    }
+
+    // Close library card modal if open
+    const libraryCardModal = document.getElementById('library-card-modal');
+    if (libraryCardModal && libraryCardModal.open) {
+      console.log('[Voice] Closing library card modal');
+      closeLibraryCard();
+      return;
+    }
+
+    // Close book modal if open
+    const bookModal = document.getElementById('book-modal');
+    if (bookModal && bookModal.open) {
+      console.log('[Voice] Closing book modal');
+      closeBookModal();
+      return;
+    }
+
+    // Close scanner overlay if open (but keep hands free mode active)
+    const overlay = document.querySelector('[data-test-id="webcam-overlay"]');
+    if (overlay && !overlay.classList.contains('hidden')) {
+      console.log('[Voice] Closing scanner (keeping hands free mode active)');
+      overlay.classList.add('hidden');
+      overlay.setAttribute('aria-hidden', 'true');
+
+      // Move cursor back to body
+      const cursor = document.getElementById('magic-cursor');
+      if (cursor && overlay && overlay.contains(cursor)) {
+        document.body.appendChild(cursor);
+      }
+
+      // Stop scanner but keep hands free mode active
+      stopBarcodeScanner();
+      setBrowseMode(true); // Keep browse mode active for hands free
+      return;
+    }
+
+    // Close settings menu if open
+    const settingsMenu = document.getElementById('settings-menu');
+    if (settingsMenu && !settingsMenu.classList.contains('hidden')) {
+      console.log('[Voice] Closing settings menu');
+      settingsMenu.classList.add('hidden');
+      return;
+    }
+
+    // Nothing to close
+    await showNotification('Nothing to close', 'ℹ️');
+    return;
+  }
+
+  // Book search and borrowing queries
   const books = await storage.getBooks();
 
   // Extract potential book title from the command
@@ -417,7 +601,7 @@ async function handleVoiceCommand(transcript) {
   }
 
   if (!bookTitle) {
-    await showNotification('Could not understand the book title. Try saying "Is [book name] in my library?"', '🎤');
+    await showNotification('Could not understand the command. Try "Is [book name] in my library?" or "Open scanner" or "Close"', '🎤');
     return;
   }
 
@@ -592,27 +776,9 @@ async function handleManualIsbn(inputElement) {
   try {
     const book = await findBookByISBN(isbn);
     if (book) {
-      // Generate and save spine color
+      // Generate and save spine color using theme-based color system
       if (!book.spineColor) {
-        const getBookColor = (bookId, title) => {
-          const seed = bookId || title || 'default';
-          let hash = 0;
-          for (let i = 0; i < seed.length; i++) {
-            hash = ((hash << 5) - hash) + seed.charCodeAt(i);
-            hash = hash & hash;
-          }
-          const colors = [
-            '#8B4513', '#A0522D', '#D2691E',
-            '#2F4F4F', '#556B2F', '#4B5320',
-            '#800020', '#8B0000', '#A52A2A',
-            '#1C3A4A', '#2C4F68', '#1E3A5F',
-            '#3B2F2F', '#4A4A4A', '#2B2B2B',
-            '#6B4423', '#8B6914', '#9B7653',
-          ];
-          const index = Math.abs(hash) % colors.length;
-          return colors[index];
-        };
-        book.spineColor = getBookColor(book.id || book.isbn, book.title);
+        book.spineColor = getBookColor(book.id || book.isbn, book.title, book.series);
       }
       await storage.addBook(book);
       renderBook(book);
@@ -714,59 +880,80 @@ async function startScanMode() {
   setBrowseMode(false);
 }
 
-async function toggleMotionCursor() {
+async function toggleHandsFreeMode() {
   const cursor = document.getElementById('magic-cursor');
   const toggleBtn = document.getElementById('toggle-motion-btn');
 
-  if (motionCursorEnabled && motionCursorInitialized) {
-    // Disable motion cursor
-    console.log('[App] Disabling motion cursor...');
+  if (handsFreeModeEnabled && handsFreeModeInitialized) {
+    // Disable hands free mode
+    console.log('[App] Disabling hands free mode...');
     cursor.style.display = 'none';
-    motionCursorEnabled = false;
-    motionCursorInitialized = false;
-    localStorage.setItem('motionCursor', 'off');
-    toggleBtn.textContent = 'Enable Motion Cursor';
+    handsFreeModeEnabled = false;
+    handsFreeModeInitialized = false;
+    continuousListening = false;
+    localStorage.setItem('handsFreeMode', 'off');
+    toggleBtn.textContent = 'Enable Hands Free Mode';
+
+    // Stop voice recognition
+    if (recognition && isListening) {
+      recognition.stop();
+      recognition = null;
+    }
 
     // Stop hand tracking and camera
     destroyHands();
     await new Promise(resolve => setTimeout(resolve, 100));
     await stopCamera();
 
-    console.log('[App] Motion cursor disabled');
+    console.log('[App] Hands free mode disabled');
   } else {
-    // Enable motion cursor
-    console.log('[App] Enabling motion cursor...');
+    // Enable hands free mode
+    console.log('[App] Enabling hands free mode...');
 
     try {
       // Start hand tracking first
-      await startMotionCursor();
+      await startHandsFreeMode();
 
       // Only update state if successful
       cursor.style.display = 'block';
-      motionCursorEnabled = true;
-      motionCursorInitialized = true;
-      localStorage.setItem('motionCursor', 'on');
-      toggleBtn.textContent = 'Disable Motion Cursor';
+      handsFreeModeEnabled = true;
+      handsFreeModeInitialized = true;
+      localStorage.setItem('handsFreeMode', 'on');
+      toggleBtn.textContent = 'Disable Hands Free Mode';
 
-      console.log('[App] Motion cursor enabled');
+      console.log('[App] Hands free mode enabled');
     } catch (error) {
-      console.error('[App] Failed to enable motion cursor:', error);
+      console.error('[App] Failed to enable hands free mode:', error);
       // Reset state on failure
       cursor.style.display = 'none';
-      motionCursorEnabled = false;
-      motionCursorInitialized = false;
-      localStorage.setItem('motionCursor', 'off');
-      toggleBtn.textContent = 'Enable Motion Cursor';
+      handsFreeModeEnabled = false;
+      handsFreeModeInitialized = false;
+      continuousListening = false;
+      localStorage.setItem('handsFreeMode', 'off');
+      toggleBtn.textContent = 'Enable Hands Free Mode';
     }
   }
 }
 
-async function startMotionCursor() {
-  console.log('[App] Starting motion cursor...');
+async function startHandsFreeMode() {
+  console.log('[App] Starting hands free mode...');
 
+  // Start camera and hand tracking
   await initCamera();
   await initHands(getVideoEl());
-  console.log('[App] Motion cursor initialized successfully');
+  setBrowseMode(true); // Enable browse mode for grab detection
+  console.log('[App] Hand tracking initialized successfully');
+
+  // Start continuous voice recognition
+  const voiceInitialized = initVoiceRecognition(true);
+  if (voiceInitialized) {
+    recognition.start();
+    console.log('[App] Continuous voice recognition started');
+  } else {
+    console.warn('[App] Voice recognition not available, continuing with hand tracking only');
+  }
+
+  console.log('[App] Hands free mode initialized successfully');
 }
 
 async function stopAll() {
@@ -794,13 +981,20 @@ async function stopAll() {
   // Now stop our camera module
   await stopCamera();
 
-  // Reset motion cursor state and UI
-  motionCursorEnabled = false;
-  motionCursorInitialized = false;
-  localStorage.setItem('motionCursor', 'off');
+  // Reset hands free mode state and UI
+  handsFreeModeEnabled = false;
+  handsFreeModeInitialized = false;
+  continuousListening = false;
+  localStorage.setItem('handsFreeMode', 'off');
   if (cursor) cursor.style.display = 'none';
   const toggleBtn = document.getElementById('toggle-motion-btn');
-  if (toggleBtn) toggleBtn.textContent = 'Enable Motion Cursor';
+  if (toggleBtn) toggleBtn.textContent = 'Enable Hands Free Mode';
+
+  // Stop voice recognition
+  if (recognition && isListening) {
+    recognition.stop();
+    recognition = null;
+  }
 
   setBrowseMode(false);
   console.log('[App] Stopped all camera operations');
@@ -813,27 +1007,9 @@ function setupEvents() {
     try {
       const book = await findBookByISBN(isbn);
       if (book) {
-        // Generate and save spine color
+        // Generate and save spine color using theme-based color system
         if (!book.spineColor) {
-          const getBookColor = (bookId, title) => {
-            const seed = bookId || title || 'default';
-            let hash = 0;
-            for (let i = 0; i < seed.length; i++) {
-              hash = ((hash << 5) - hash) + seed.charCodeAt(i);
-              hash = hash & hash;
-            }
-            const colors = [
-              '#8B4513', '#A0522D', '#D2691E',
-              '#2F4F4F', '#556B2F', '#4B5320',
-              '#800020', '#8B0000', '#A52A2A',
-              '#1C3A4A', '#2C4F68', '#1E3A5F',
-              '#3B2F2F', '#4A4A4A', '#2B2B2B',
-              '#6B4423', '#8B6914', '#9B7653',
-            ];
-            const index = Math.abs(hash) % colors.length;
-            return colors[index];
-          };
-          book.spineColor = getBookColor(book.id || book.isbn, book.title);
+          book.spineColor = getBookColor(book.id || book.isbn, book.title, book.series);
         }
         await storage.addBook(book);
         renderBook(book);
@@ -954,6 +1130,27 @@ window.migrateSeries = async function() {
   console.log('[App] Migration complete, books re-rendered');
 };
 
+async function ensureBookColors() {
+  console.log('[App] Ensuring all books have spine colors...');
+  const books = await storage.getBooks();
+  let updated = 0;
+
+  for (const book of books) {
+    if (!book.spineColor) {
+      book.spineColor = getBookColor(book.id || book.isbn, book.title, book.series);
+      await storage.addBook(book);
+      updated++;
+      console.log('[App] Added color to:', book.title, '→', book.spineColor);
+    }
+  }
+
+  if (updated > 0) {
+    console.log('[App] Updated', updated, 'books with spine colors');
+    return true;
+  }
+  return false;
+}
+
 async function boot() {
   await registerSW();
   initUI();
@@ -963,20 +1160,23 @@ async function boot() {
   // Run migration to fix existing books without series info
   const migrated = await migrateExistingBooks();
 
+  // Ensure all books have spine colors
+  await ensureBookColors();
+
   const books = await storage.getBooks();
   console.log('[App] Boot: Found', books.length, 'books in storage');
   console.log('[App] Books:', books);
   hydrateBooks(books);
 
   // Do not auto-start the camera; wait for explicit user action.
-  const wasEnabled = localStorage.getItem('motionCursor') === 'on';
+  const wasEnabled = localStorage.getItem('handsFreeMode') === 'on';
   if (wasEnabled) {
-    console.log('[App] Restoring motion cursor from previous session...');
-    motionCursorEnabled = true;
-    motionCursorInitialized = false;
-    await startMotionCursor();
+    console.log('[App] Restoring hands free mode from previous session...');
+    handsFreeModeEnabled = true;
+    handsFreeModeInitialized = false;
+    await startHandsFreeMode();
   } else {
-    console.log('[App] Motion cursor is opt-in. Use the toggle to enable.');
+    console.log('[App] Hands free mode is opt-in. Use the toggle to enable.');
   }
 }
 

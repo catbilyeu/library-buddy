@@ -80,7 +80,7 @@ function getCurrentTheme() {
 // Generate deterministic book color based on book ID/title and current theme
 // Books in a series will share the same color
 // Colors are distributed to avoid repeats until all colors have been used
-function getBookColor(bookId, title, series = null) {
+export function getBookColor(bookId, title, series = null) {
   const theme = getCurrentTheme();
   const colors = themeColorPalettes[theme];
 
@@ -166,9 +166,21 @@ export function renderBook(book, targetShelf = null) {
   tile.setAttribute('data-author', book.author || '');
   if (book.coverUrl) tile.setAttribute('data-cover', book.coverUrl);
 
-  // Always generate color based on current theme (don't use stored color)
-  // Pass series name so all books in a series share the same color
-  const spineColor = getBookColor(book.id || book.isbn, book.title, book.series);
+  // Check if stored color is from current theme's palette
+  const currentTheme = getCurrentTheme();
+  const currentPalette = themeColorPalettes[currentTheme];
+  const storedColorValid = book.spineColor && currentPalette.includes(book.spineColor);
+
+  let spineColor;
+  if (storedColorValid) {
+    // Use stored color if it's from the current theme
+    spineColor = book.spineColor;
+  } else {
+    // Generate new color from current theme's palette
+    spineColor = getBookColor(book.id || book.isbn, book.title, book.series);
+    // Save the color back to the book object for persistence
+    book.spineColor = spineColor;
+  }
 
   // Store the color in data attribute so modal can use it
   tile.setAttribute('data-color', spineColor);
