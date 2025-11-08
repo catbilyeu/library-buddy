@@ -569,32 +569,42 @@ async function handleVoiceCommand(transcript) {
   }
 
   // Check for borrowing command (e.g., "hannah started borrowing fourth wing today")
-  if (transcript.includes('started borrowing') || transcript.includes('borrowed')) {
+  if (transcript.includes('started borrowing') || transcript.includes('borrowed') || transcript.includes('is borrowing')) {
     console.log('[Voice] Borrowing command detected');
 
-    // Pattern: "[name] started borrowing [book] [date]"
+    // Pattern: "[name] started borrowing [book] [date]" or "[name] is borrowing [book] [date]"
     let borrowerName = null;
     let bookTitle = null;
     let dateString = '';
 
-    const borrowingMatch = transcript.match(/(.+?)\s+(?:started borrowing|borrowed)\s+(.+)/);
+    const borrowingMatch = transcript.match(/(.+?)\s+(?:started borrowing|borrowed|is borrowing)\s+(.+)/);
     if (borrowingMatch) {
       borrowerName = borrowingMatch[1].trim();
       const restOfCommand = borrowingMatch[2].trim();
 
       // Extract date indicators from the end
       const datePatterns = [
-        /(.+?)\s+(today|yesterday|last\s+(?:sunday|monday|tuesday|wednesday|thursday|friday|saturday)|on\s+\w+\s+\d+(?:st|nd|rd|th)?)$/,
+        /(.+?)\s+(today|yesterday|last\s+(?:sunday|monday|tuesday|wednesday|thursday|friday|saturday)|on\s+\w+\s+\d+(?:st|nd|rd|th)?)$/i,
         /(.+)$/ // Fallback if no date specified
       ];
 
+      let matched = false;
       for (const pattern of datePatterns) {
         const match = restOfCommand.match(pattern);
         if (match) {
           bookTitle = match[1].trim();
           dateString = match[2] || 'today';
+          matched = true;
+          console.log('[Voice] Pattern matched - Book:', bookTitle, 'Date:', dateString);
           break;
         }
+      }
+
+      if (!matched) {
+        // No date pattern matched, treat entire rest as book title
+        bookTitle = restOfCommand;
+        dateString = 'today';
+        console.log('[Voice] No date pattern - Book:', bookTitle, 'Date:', dateString);
       }
     }
 
@@ -618,12 +628,20 @@ async function handleVoiceCommand(transcript) {
     if (foundBook) {
       const borrowDate = parseVoiceDate(dateString);
 
+      console.log('[Voice] Parsed borrow date:', borrowDate);
+      console.log('[Voice] Adding borrower to book:', foundBook.title);
+
       if (!foundBook.borrowers) {
         foundBook.borrowers = [];
       }
 
       foundBook.borrowers.push({ name: borrowerName, date: borrowDate });
+
+      console.log('[Voice] Book borrowers after push:', foundBook.borrowers);
+
       await storage.addBook(foundBook);
+
+      console.log('[Voice] Book saved to storage');
 
       await showNotification(`${borrowerName} started borrowing "${foundBook.title}" on ${borrowDate}`, '✅');
       console.log('[Voice] Borrower added successfully');
@@ -650,17 +668,27 @@ async function handleVoiceCommand(transcript) {
 
       // Extract date indicators from the end
       const datePatterns = [
-        /(.+?)\s+(today|yesterday|last\s+(?:sunday|monday|tuesday|wednesday|thursday|friday|saturday)|on\s+\w+\s+\d+(?:st|nd|rd|th)?)$/,
+        /(.+?)\s+(today|yesterday|last\s+(?:sunday|monday|tuesday|wednesday|thursday|friday|saturday)|on\s+\w+\s+\d+(?:st|nd|rd|th)?)$/i,
         /(.+)$/ // Fallback if no date specified
       ];
 
+      let matched = false;
       for (const pattern of datePatterns) {
         const match = restOfCommand.match(pattern);
         if (match) {
           bookTitle = match[1].trim();
           dateString = match[2] || 'today';
+          matched = true;
+          console.log('[Voice] Pattern matched - Book:', bookTitle, 'Date:', dateString);
           break;
         }
+      }
+
+      if (!matched) {
+        // No date pattern matched, treat entire rest as book title
+        bookTitle = restOfCommand;
+        dateString = 'today';
+        console.log('[Voice] No date pattern - Book:', bookTitle, 'Date:', dateString);
       }
     }
 
@@ -1111,9 +1139,17 @@ async function toggleHandsFreeMode() {
     toggleBtn.textContent = 'Enable Hands Free Mode';
 
     // Stop voice recognition
-    if (recognition && isListening) {
-      recognition.stop();
-      recognition = null;
+    if (recognition) {
+      try {
+        console.log('[App] Stopping voice recognition...');
+        isListening = false;
+        recognition.stop();
+        recognition.abort(); // Force abort to ensure it stops
+        recognition = null;
+        console.log('[App] Voice recognition stopped');
+      } catch (err) {
+        console.warn('[App] Error stopping voice recognition:', err);
+      }
     }
 
     // Stop hand tracking and camera
