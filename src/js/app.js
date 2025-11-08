@@ -206,7 +206,7 @@ function applyTheme(theme) {
   if (!library) return;
 
   // Remove all theme classes from library
-  library.classList.remove('theme-witchy', 'theme-colorful', 'theme-minimal');
+  library.classList.remove('theme-witchy', 'theme-colorful', 'theme-minimal', 'theme-bookshelf');
 
   // Add new theme class to library
   if (theme !== 'witchy') {
@@ -214,7 +214,7 @@ function applyTheme(theme) {
   }
 
   // Also add theme class to body for header styling
-  document.body.classList.remove('theme-witchy', 'theme-colorful', 'theme-minimal');
+  document.body.classList.remove('theme-witchy', 'theme-colorful', 'theme-minimal', 'theme-bookshelf');
   document.body.classList.add(`theme-${theme}`);
 
   console.log('[App] Applied theme:', theme);
@@ -257,19 +257,27 @@ function renderBorrowerList(book) {
     return;
   }
 
-  borrowerList.innerHTML = borrowers.map((borrower, index) => `
-    <div class="borrower-entry">
-      <span class="borrower-name">${borrower.name}</span>
-      <span class="borrower-date">${borrower.date}</span>
-      <button class="remove-borrower-btn" data-index="${index}">Return</button>
-    </div>
-  `).join('');
+  borrowerList.innerHTML = borrowers.map((borrower, index) => {
+    const isReturned = borrower.returnDate;
+    const statusClass = isReturned ? 'returned' : 'active';
+    const dateDisplay = isReturned
+      ? `${borrower.date} - ${borrower.returnDate}`
+      : borrower.date;
 
-  // Add event listeners to remove buttons
-  borrowerList.querySelectorAll('.remove-borrower-btn').forEach(btn => {
+    return `
+      <div class="borrower-entry ${statusClass}">
+        <span class="borrower-name">${borrower.name}</span>
+        <span class="borrower-date">${dateDisplay}</span>
+        ${!isReturned ? `<button class="return-borrower-btn" data-index="${index}">Return</button>` : '<span class="returned-badge">Returned</span>'}
+      </div>
+    `;
+  }).join('');
+
+  // Add event listeners to return buttons
+  borrowerList.querySelectorAll('.return-borrower-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const index = parseInt(btn.getAttribute('data-index'));
-      await removeBorrower(index);
+      await returnBorrower(index);
     });
   });
 }
@@ -313,7 +321,7 @@ async function addBorrower() {
   renderBorrowerList(book);
 }
 
-async function removeBorrower(index) {
+async function returnBorrower(index, returnDate = null) {
   const bookId = getCurrentBookId();
   if (!bookId) return;
 
@@ -321,7 +329,9 @@ async function removeBorrower(index) {
   const book = books.find(b => (b.id || b.isbn) === bookId);
   if (!book || !book.borrowers) return;
 
-  book.borrowers.splice(index, 1);
+  // Set return date instead of removing the entry
+  const today = returnDate || new Date().toISOString().split('T')[0];
+  book.borrowers[index].returnDate = today;
   await storage.addBook(book);
 
   // Re-render list
@@ -338,6 +348,75 @@ function closeLibraryCard() {
   if (cursor && modal.contains(cursor) && bookModal) {
     bookModal.appendChild(cursor);
   }
+}
+
+// Date parsing helper for voice commands
+function parseVoiceDate(dateString) {
+  const today = new Date();
+  const lowerDate = dateString.toLowerCase();
+
+  // Handle "today"
+  if (lowerDate.includes('today')) {
+    return today.toISOString().split('T')[0];
+  }
+
+  // Handle "yesterday"
+  if (lowerDate.includes('yesterday')) {
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    return yesterday.toISOString().split('T')[0];
+  }
+
+  // Handle "last [day of week]" (e.g., "last wednesday")
+  const dayMatch = lowerDate.match(/last\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)/);
+  if (dayMatch) {
+    const targetDay = dayMatch[1];
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const targetDayIndex = days.indexOf(targetDay);
+    const currentDayIndex = today.getDay();
+
+    let daysAgo = currentDayIndex - targetDayIndex;
+    if (daysAgo <= 0) daysAgo += 7; // Go back to last week
+
+    const targetDate = new Date(today);
+    targetDate.setDate(targetDate.getDate() - daysAgo);
+    return targetDate.toISOString().split('T')[0];
+  }
+
+  // Handle "on [month] [day]" (e.g., "on nov 1st", "on november 1")
+  const monthDayMatch = lowerDate.match(/on\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d+)/);
+  if (monthDayMatch) {
+    const monthStr = monthDayMatch[1];
+    const day = parseInt(monthDayMatch[2]);
+
+    const monthMap = {
+      'jan': 0, 'january': 0,
+      'feb': 1, 'february': 1,
+      'mar': 2, 'march': 2,
+      'apr': 3, 'april': 3,
+      'may': 4,
+      'jun': 5, 'june': 5,
+      'jul': 6, 'july': 6,
+      'aug': 7, 'august': 7,
+      'sep': 8, 'september': 8,
+      'oct': 9, 'october': 9,
+      'nov': 10, 'november': 10,
+      'dec': 11, 'december': 11
+    };
+
+    const month = monthMap[monthStr];
+    if (month !== undefined) {
+      const targetDate = new Date(today.getFullYear(), month, day);
+      // If the date is in the future, assume last year
+      if (targetDate > today) {
+        targetDate.setFullYear(today.getFullYear() - 1);
+      }
+      return targetDate.toISOString().split('T')[0];
+    }
+  }
+
+  // Default to today if we can't parse
+  return today.toISOString().split('T')[0];
 }
 
 // Voice Search Functionality
@@ -481,6 +560,143 @@ async function handleVoiceCommand(transcript) {
       } catch (error) {
         console.error('[Voice] Failed to remove book:', error);
         await showNotification('Failed to remove book. Please try again.', '❌');
+      }
+    } else {
+      await showNotification(`"${bookTitle}" was not found in your library`, '📚');
+    }
+
+    return;
+  }
+
+  // Check for borrowing command (e.g., "hannah started borrowing fourth wing today")
+  if (transcript.includes('started borrowing') || transcript.includes('borrowed')) {
+    console.log('[Voice] Borrowing command detected');
+
+    // Pattern: "[name] started borrowing [book] [date]"
+    let borrowerName = null;
+    let bookTitle = null;
+    let dateString = '';
+
+    const borrowingMatch = transcript.match(/(.+?)\s+(?:started borrowing|borrowed)\s+(.+)/);
+    if (borrowingMatch) {
+      borrowerName = borrowingMatch[1].trim();
+      const restOfCommand = borrowingMatch[2].trim();
+
+      // Extract date indicators from the end
+      const datePatterns = [
+        /(.+?)\s+(today|yesterday|last\s+(?:sunday|monday|tuesday|wednesday|thursday|friday|saturday)|on\s+\w+\s+\d+(?:st|nd|rd|th)?)$/,
+        /(.+)$/ // Fallback if no date specified
+      ];
+
+      for (const pattern of datePatterns) {
+        const match = restOfCommand.match(pattern);
+        if (match) {
+          bookTitle = match[1].trim();
+          dateString = match[2] || 'today';
+          break;
+        }
+      }
+    }
+
+    if (!borrowerName || !bookTitle) {
+      await showNotification('Could not understand. Try "[name] started borrowing [book] today"', '🎤');
+      return;
+    }
+
+    // Clean up book title
+    bookTitle = bookTitle.replace(/^(the|a|an)\s+/i, '').trim();
+
+    console.log('[Voice] Borrower:', borrowerName, 'Book:', bookTitle, 'Date:', dateString);
+
+    // Find the book
+    const books = await storage.getBooks();
+    const foundBook = books.find(book => {
+      const titleMatch = book.title?.toLowerCase().includes(bookTitle);
+      return titleMatch;
+    });
+
+    if (foundBook) {
+      const borrowDate = parseVoiceDate(dateString);
+
+      if (!foundBook.borrowers) {
+        foundBook.borrowers = [];
+      }
+
+      foundBook.borrowers.push({ name: borrowerName, date: borrowDate });
+      await storage.addBook(foundBook);
+
+      await showNotification(`${borrowerName} started borrowing "${foundBook.title}" on ${borrowDate}`, '✅');
+      console.log('[Voice] Borrower added successfully');
+    } else {
+      await showNotification(`"${bookTitle}" was not found in your library`, '📚');
+    }
+
+    return;
+  }
+
+  // Check for return command (e.g., "hannah returned fourth wing today")
+  if (transcript.includes('returned')) {
+    console.log('[Voice] Return command detected');
+
+    // Pattern: "[name] returned [book] [date]"
+    let borrowerName = null;
+    let bookTitle = null;
+    let dateString = '';
+
+    const returnMatch = transcript.match(/(.+?)\s+returned\s+(.+)/);
+    if (returnMatch) {
+      borrowerName = returnMatch[1].trim();
+      const restOfCommand = returnMatch[2].trim();
+
+      // Extract date indicators from the end
+      const datePatterns = [
+        /(.+?)\s+(today|yesterday|last\s+(?:sunday|monday|tuesday|wednesday|thursday|friday|saturday)|on\s+\w+\s+\d+(?:st|nd|rd|th)?)$/,
+        /(.+)$/ // Fallback if no date specified
+      ];
+
+      for (const pattern of datePatterns) {
+        const match = restOfCommand.match(pattern);
+        if (match) {
+          bookTitle = match[1].trim();
+          dateString = match[2] || 'today';
+          break;
+        }
+      }
+    }
+
+    if (!borrowerName || !bookTitle) {
+      await showNotification('Could not understand. Try "[name] returned [book] today"', '🎤');
+      return;
+    }
+
+    // Clean up book title
+    bookTitle = bookTitle.replace(/^(the|a|an)\s+/i, '').trim();
+
+    console.log('[Voice] Borrower:', borrowerName, 'Book:', bookTitle, 'Return date:', dateString);
+
+    // Find the book
+    const books = await storage.getBooks();
+    const foundBook = books.find(book => {
+      const titleMatch = book.title?.toLowerCase().includes(bookTitle);
+      return titleMatch;
+    });
+
+    if (foundBook) {
+      const returnDate = parseVoiceDate(dateString);
+
+      // Find the active borrower (no return date)
+      const borrowerIndex = foundBook.borrowers?.findIndex(b =>
+        b.name.toLowerCase() === borrowerName.toLowerCase() && !b.returnDate
+      );
+
+      if (borrowerIndex !== undefined && borrowerIndex >= 0) {
+        foundBook.borrowers[borrowerIndex].returnDate = returnDate;
+        await storage.addBook(foundBook);
+
+        await showNotification(`${borrowerName} returned "${foundBook.title}" on ${returnDate}`, '✅');
+        console.log('[Voice] Return recorded successfully');
+      } else {
+        await showNotification(`${borrowerName} is not currently borrowing "${foundBook.title}"`, 'ℹ️');
       }
     } else {
       await showNotification(`"${bookTitle}" was not found in your library`, '📚');
@@ -1167,6 +1383,16 @@ async function boot() {
   console.log('[App] Boot: Found', books.length, 'books in storage');
   console.log('[App] Books:', books);
   hydrateBooks(books);
+
+  // Add resize listener for bookshelf theme responsiveness
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(async () => {
+      const books = await storage.getBooks();
+      hydrateBooks(books);
+    }, 300); // Debounce resize
+  });
 
   // Do not auto-start the camera; wait for explicit user action.
   const wasEnabled = localStorage.getItem('handsFreeMode') === 'on';

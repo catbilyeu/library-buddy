@@ -62,6 +62,16 @@ const themeColorPalettes = {
     '#9E9D89', '#ABA996', '#B8B5A3', // sage
     '#BCAAA4', '#D7CCC8', '#EFEBE9', // light browns
     '#B0A090', '#9C8B7A', '#887768', // medium browns
+  ],
+  bookshelf: [
+    '#8B4513', '#A0522D', '#D2691E', '#CD853F', // rich browns
+    '#556B2F', '#6B8E23', '#808000', '#9ACD32', // olives and greens
+    '#8B0000', '#A52A2A', '#B22222', '#CD5C5C', // deep reds
+    '#2F4F4F', '#4682B4', '#5F9EA0', '#6495ED', // blues
+    '#8B7355', '#A0826D', '#B8956A', '#D4AF6A', // tans and golds
+    '#483D8B', '#6A5ACD', '#7B68EE', '#9370DB', // purples
+    '#2E8B57', '#3CB371', '#66CDAA', '#8FBC8F', // sea greens
+    '#B8860B', '#DAA520', '#FFD700', '#F0E68C', // golds
   ]
 };
 
@@ -74,7 +84,28 @@ let colorUsageCounts = new Map();
 function getCurrentTheme() {
   if (document.body.classList.contains('theme-colorful')) return 'colorful';
   if (document.body.classList.contains('theme-minimal')) return 'minimal';
+  if (document.body.classList.contains('theme-bookshelf')) return 'bookshelf';
   return 'witchy';
+}
+
+// Generate deterministic book height for bookshelf theme
+// Heights vary based on series/genre for visual variety
+function getBookHeight(bookId, title, series = null) {
+  // Use series as seed if available for consistent heights within series
+  const seed = series || bookId || title || 'default';
+
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+    hash = hash & hash;
+  }
+
+  // Generate height between 180px and 300px
+  const minHeight = 180;
+  const maxHeight = 300;
+  const height = minHeight + (Math.abs(hash) % (maxHeight - minHeight + 1));
+
+  return height;
 }
 
 // Generate deterministic book color based on book ID/title and current theme
@@ -184,6 +215,12 @@ export function renderBook(book, targetShelf = null) {
 
   // Store the color in data attribute so modal can use it
   tile.setAttribute('data-color', spineColor);
+
+  // For bookshelf theme, apply dynamic height
+  if (currentTheme === 'bookshelf') {
+    const bookHeight = getBookHeight(book.id || book.isbn, book.title, book.series);
+    tile.style.setProperty('--book-height', `${bookHeight}px`);
+  }
 
   // Store series info in data attributes
   if (book.series) {
@@ -336,6 +373,18 @@ function renderCurrentPage() {
   });
 }
 
+// Calculate books per shelf based on window width (for bookshelf theme)
+function getBooksPerShelf() {
+  const theme = getCurrentTheme();
+  if (theme !== 'bookshelf') return 12; // Default for other themes
+
+  // Calculate based on window width and book width (~70px average)
+  const containerWidth = window.innerWidth - 100; // Account for padding
+  const bookWidth = 75; // Average book spine width
+  const booksPerRow = Math.floor(containerWidth / bookWidth);
+  return Math.max(6, Math.min(booksPerRow, 20)); // Between 6-20 books per shelf
+}
+
 export function hydrateBooks(books = []) {
   console.log('[UI] Sorting books by:', currentSortMode);
 
@@ -356,7 +405,7 @@ export function hydrateBooks(books = []) {
         return lastNameA.localeCompare(lastNameB);
       });
       {
-        const perShelf = 12;
+        const perShelf = getBooksPerShelf(); // Dynamic based on window width
         const container = shelves();
         container.innerHTML = '';
         container.setAttribute('role', 'list');
@@ -469,7 +518,7 @@ export function hydrateBooks(books = []) {
           // Within same category, sort by hue
           return colorA.hue - colorB.hue;
         });
-        const perShelf = 12;
+        const perShelf = getBooksPerShelf(); // Dynamic based on window width
         const container = shelves();
         container.innerHTML = '';
         container.setAttribute('role', 'list');

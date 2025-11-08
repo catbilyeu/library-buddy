@@ -307,3 +307,192 @@ body.theme-minimal .page-btn:hover:not(:disabled) {
   background: rgba(200,164,82,0.5);
   border-radius: 1px;
 }
+
+/* ============================================
+   BOOKSHELF THEME - Dynamic CSS Shelves
+   ============================================ */
+
+/* Warm library wall background */
+.library.theme-bookshelf {
+  background: linear-gradient(135deg, #e8dcc8 0%, #d4c5a9 50%, #c7b299 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  overflow-y: auto; /* Allow scrolling */
+  overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+/* Shelves container shouldn't clip */
+.theme-bookshelf .shelves {
+  overflow: visible !important;
+  padding-top: 20px;
+}
+
+body.theme-bookshelf .hud {
+  background: linear-gradient(135deg, #8b7355 0%, #6d5a45 100%);
+  border-bottom: 3px solid #5a4735;
+}
+
+body.theme-bookshelf .hud button {
+  background: linear-gradient(135deg, #a58968 0%, #8b7355 100%);
+  border: 1px solid #6d5a45;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+body.theme-bookshelf .hud button:hover {
+  background: linear-gradient(135deg, #8b7355 0%, #6d5a45 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+}
+
+body.theme-bookshelf .hud select {
+  background: linear-gradient(135deg, #a58968 0%, #8b7355 100%);
+  border: 1px solid #6d5a45;
+}
+
+body.theme-bookshelf .hud select:hover {
+  background: linear-gradient(135deg, #8b7355 0%, #6d5a45 100%);
+}
+
+body.theme-bookshelf .pagination-footer {
+  background: linear-gradient(135deg, #8b7355 0%, #6d5a45 100%);
+  border-top: 3px solid #5a4735;
+}
+
+body.theme-bookshelf .page-btn {
+  background: linear-gradient(135deg, #a58968 0%, #8b7355 100%);
+  border: 1px solid #6d5a45;
+}
+
+body.theme-bookshelf .page-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #8b7355 0%, #6d5a45 100%);
+}
+
+/* Realistic wooden shelves with VISIBLE horizontal planks */
+.theme-bookshelf .shelf {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 20px var(--space-6) 45px; /* Top padding prevents clipping! */
+  min-height: 350px; /* Taller to fit books */
+  margin-bottom: 20px; /* Gap between shelves */
+  position: relative;
+  flex-wrap: wrap; /* Books wrap to next line when needed */
+  overflow: visible !important; /* CRITICAL - don't clip books! */
+  /* Auto-adjust height based on content */
+  height: auto;
+}
+
+/* Visible wooden shelf plank - books sit ON this */
+.theme-bookshelf .shelf::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 35px;
+  /* Wood grain texture using gradients */
+  background:
+    /* Subtle wood grain lines */
+    repeating-linear-gradient(90deg,
+      transparent 0px,
+      transparent 80px,
+      rgba(90,70,50,0.15) 80px,
+      rgba(90,70,50,0.15) 82px
+    ),
+    /* Vertical gradient for depth */
+    linear-gradient(180deg,
+      #b89968 0%,
+      #a58968 10%,
+      #8b7355 40%,
+      #7a6550 70%,
+      #6d5a45 90%,
+      #5a4735 100%
+    );
+  border-radius: 2px 2px 4px 4px;
+  /* Realistic 3D depth and shadow */
+  box-shadow:
+    /* Top highlight */
+    inset 0 2px 1px rgba(255,255,255,0.2),
+    /* Inner shadow for depth */
+    inset 0 -3px 5px rgba(0,0,0,0.3),
+    /* Drop shadow below shelf */
+    0 6px 12px rgba(0,0,0,0.4),
+    0 2px 4px rgba(0,0,0,0.3);
+  border-top: 1px solid rgba(255,255,255,0.15);
+  border-bottom: 2px solid rgba(0,0,0,0.4);
+  z-index: 1;
+}
+
+/* No brackets - they look like turds */
+
+/* Books in bookshelf theme have varied heights and sit ON the shelf */
+.theme-bookshelf .book-tile {
+  /* Heights will be set dynamically via inline style or data attribute */
+  height: var(--book-height, 220px);
+  min-height: 180px;
+  max-height: 260px;
+  align-self: flex-end;
+  margin-bottom: 0; /* Sit directly on shelf plank */
+  position: relative;
+  z-index: 5;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  /* Cast realistic shadow on shelf */
+  box-shadow:
+    /* Main shadow on shelf */
+    0 6px 10px rgba(0,0,0,0.35),
+    0 2px 4px rgba(0,0,0,0.25),
+    /* Book spine depth */
+    inset -3px 0 5px rgba(0,0,0,0.25),
+    inset 3px 0 3px rgba(255,255,255,0.1);
+}
+
+/* Slightly tilt books for realism */
+.theme-bookshelf .book-tile:nth-child(3n+1) {
+  transform: rotate(-0.8deg);
+}
+
+.theme-bookshelf .book-tile:nth-child(3n+2) {
+  transform: rotate(0.8deg);
+}
+
+.theme-bookshelf .book-tile:nth-child(3n) {
+  transform: rotate(-0.3deg);
+}
+
+/* Enhanced hover effect - book lifts off shelf */
+.theme-bookshelf .book-tile:hover {
+  transform: translateY(-12px) scale(1.03) rotate(0deg) !important;
+  box-shadow:
+    /* Bigger shadow when lifted */
+    0 12px 20px rgba(0,0,0,0.45),
+    0 4px 8px rgba(0,0,0,0.35),
+    inset -3px 0 5px rgba(0,0,0,0.25),
+    inset 3px 0 3px rgba(255,255,255,0.15);
+  z-index: 100;
+}
+
+/* Text colors for bookshelf theme */
+.theme-bookshelf .book-tile .title {
+  color: #2a2010;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.5);
+  font-weight: 700;
+}
+
+.theme-bookshelf .book-tile .author {
+  color: #4a3820;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.5);
+  font-weight: 600;
+}
+
+/* Series badges for bookshelf theme */
+.theme-bookshelf .series-badge {
+  background: linear-gradient(135deg, #c8a452 0%, #b8944a 100%);
+  color: #2a2010;
+  border: 1px solid #a07f3a;
+}
+
+/* First page shelf has extra top margin for spacing */
+.theme-bookshelf .shelves > .shelf:first-child {
+  margin-top: var(--space-6);
+}

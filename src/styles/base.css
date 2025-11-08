@@ -653,7 +653,7 @@ p { margin: 0 0 var(--space-3); }
   font-size: 0.9rem;
 }
 
-.remove-borrower-btn {
+.return-borrower-btn {
   background: #c44;
   color: white;
   border: none;
@@ -664,8 +664,29 @@ p { margin: 0 0 var(--space-3); }
   transition: background 0.2s ease;
 }
 
-.remove-borrower-btn:hover {
+.return-borrower-btn:hover {
   background: #a33;
+}
+
+.borrower-entry.returned {
+  opacity: 0.6;
+  background: rgba(200,200,200,0.3);
+}
+
+.borrower-entry.returned .borrower-name,
+.borrower-entry.returned .borrower-date {
+  color: #7a6a5a;
+  text-decoration: line-through;
+}
+
+.returned-badge {
+  color: #5a8a5a;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 4px 12px;
+  background: rgba(90,138,90,0.2);
+  border-radius: 4px;
+  border: 1px solid rgba(90,138,90,0.4);
 }
 
 .card-footer {
