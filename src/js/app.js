@@ -7,6 +7,7 @@ import { initHands, onCursorMove, onGrab, onOpenHand, onWave, onSwipeUp, destroy
 import { renderBook, openBookModal, closeBookModal, initUI, hydrateBooks, highlightAtCursor, getCurrentBookId, setSortMode, getSortMode, nextPage, prevPage, resetColorTracking, getBookColor } from './ui.js';
 import { findBookByISBN, searchBookByText, updateBookCover, detectSeriesFromTitle } from './api.js';
 import { storage, events } from './storage.js';
+import { loginWithGoogle, logout, onAuthChange, getCurrentUser } from './firebase.js';
 
 const qs = (sel, root = document) => root.querySelector(sel);
 
@@ -71,6 +72,15 @@ function setupControls() {
   const exportBtn = document.querySelector('[data-action="export"]');
   const importBtn = document.querySelector('[data-action="import"]');
   const importInput = document.getElementById('import-file');
+
+  // Auth buttons
+  const loginBtn = document.getElementById('login-btn');
+  const logoutBtn = document.getElementById('logout-btn');
+  const modalLoginBtn = document.getElementById('modal-login-btn');
+
+  loginBtn?.addEventListener('click', handleLogin);
+  logoutBtn?.addEventListener('click', handleLogout);
+  modalLoginBtn?.addEventListener('click', handleLogin);
 
   // Initialize button states based on saved preferences
   const cursorEnabled = localStorage.getItem('handCursorEnabled') === 'on';
@@ -1392,6 +1402,29 @@ function setupEvents() {
   // Cursor move from hands
   onCursorMove(({ x, y }) => {
     const cursor = document.getElementById('magic-cursor');
+    if (!cursor) return;
+
+    // Ensure cursor is visible
+    if (cursor.style.display !== 'block') {
+      cursor.style.display = 'block';
+    }
+
+    // Check if cursor is trapped in a hidden or closed element
+    const parent = cursor.parentElement;
+    if (parent && parent !== document.body) {
+      // Check if parent is a dialog that's not open, or has display:none/hidden class
+      const isHiddenDialog = parent.tagName === 'DIALOG' && !parent.open;
+      const isHidden = parent.classList.contains('hidden') ||
+                      parent.getAttribute('aria-hidden') === 'true' ||
+                      window.getComputedStyle(parent).display === 'none';
+
+      // If parent is hidden, closed, or not an open dialog, move cursor back to body
+      // Exception: keep cursor in open dialogs (they're in the top layer)
+      if (isHiddenDialog || (isHidden && !(parent.tagName === 'DIALOG' && parent.open))) {
+        document.body.appendChild(cursor);
+      }
+    }
+
     cursor.style.left = `${x}px`;
     cursor.style.top = `${y}px`;
     highlightAtCursor({ x, y });
@@ -1521,22 +1554,88 @@ async function ensureBookColors() {
   return false;
 }
 
+// Authentication handlers
+async function handleLogin() {
+  try {
+    console.log('[App] Attempting Google login...');
+    await loginWithGoogle();
+    await showNotification('Successfully signed in!', '✅');
+  } catch (error) {
+    console.error('[App] Login error:', error);
+    await showNotification('Failed to sign in. Please try again.', '❌');
+  }
+}
+
+async function handleLogout() {
+  try {
+    console.log('[App] Logging out...');
+    await logout();
+    await showNotification('Signed out successfully', '👋');
+  } catch (error) {
+    console.error('[App] Logout error:', error);
+    await showNotification('Failed to sign out. Please try again.', '❌');
+  }
+}
+
+function updateAuthUI(user) {
+  const loginBtn = document.getElementById('login-btn');
+  const userInfo = document.getElementById('user-info');
+  const userEmail = document.getElementById('user-email');
+  const signinModal = document.getElementById('signin-modal');
+
+  if (user) {
+    // User is logged in
+    console.log('[App] User logged in:', user.email);
+    loginBtn?.classList.add('hidden');
+    userInfo?.classList.remove('hidden');
+    if (userEmail) userEmail.textContent = user.email;
+
+    // Close sign-in modal if open
+    if (signinModal && signinModal.open) {
+      signinModal.close();
+    }
+  } else {
+    // User is logged out
+    console.log('[App] User logged out');
+    loginBtn?.classList.remove('hidden');
+    userInfo?.classList.add('hidden');
+
+    // Show sign-in modal
+    if (signinModal && !signinModal.open) {
+      signinModal.showModal();
+    }
+  }
+}
+
 async function boot() {
   await registerSW();
   initUI();
   setupControls();
   setupEvents();
 
-  // Run migration to fix existing books without series info
-  const migrated = await migrateExistingBooks();
+  // Set up authentication state listener
+  onAuthChange(async (user) => {
+    updateAuthUI(user);
 
-  // Ensure all books have spine colors
-  await ensureBookColors();
+    if (user) {
+      // User is logged in - load their library
+      console.log('[App] Loading library for user:', user.email);
 
-  const books = await storage.getBooks();
-  console.log('[App] Boot: Found', books.length, 'books in storage');
-  console.log('[App] Books:', books);
-  hydrateBooks(books);
+      // Run migration to fix existing books without series info
+      const migrated = await migrateExistingBooks();
+
+      // Ensure all books have spine colors
+      await ensureBookColors();
+
+      const books = await storage.getBooks();
+      console.log('[App] Found', books.length, 'books in storage');
+      hydrateBooks(books);
+    } else {
+      // User is logged out - clear the library view
+      console.log('[App] User logged out - clearing library view');
+      hydrateBooks([]);
+    }
+  });
 
   // Add resize listener for bookshelf theme responsiveness
   let resizeTimeout;

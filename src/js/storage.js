@@ -1,66 +1,89 @@
-/** storage and cache helpers using IndexedDB via idb */
+/** storage and cache helpers using Firebase Firestore */
 
-let idbMod = null;
+import { getCurrentUser, addBook as firebaseAddBook, getBooks as firebaseGetBooks, removeBook as firebaseRemoveBook, getBook as firebaseGetBook } from './firebase.js';
+
 const memCache = new Map();
 
-async function getIdb() {
-  if (!idbMod) {
-    idbMod = await import('https://cdn.jsdelivr.net/npm/idb@7/build/index.min.js');
+// Get current user ID, throw error if not logged in
+function getUserId() {
+  const user = getCurrentUser();
+  if (!user) {
+    throw new Error('User not authenticated. Please log in to access your library.');
   }
-  return idbMod;
-}
-
-async function getDB() {
-  const { openDB } = await getIdb();
-  return openDB('homeLibrary', 1, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains('books')) {
-        db.createObjectStore('books', { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains('apiCache')) {
-        db.createObjectStore('apiCache', { keyPath: 'key' });
-      }
-    }
-  });
+  return user.uid;
 }
 
 export const storage = {
   async addBook(book) {
-    const db = await getDB();
-    await db.put('books', book);
-    events.emit('books:changed');
+    try {
+      const userId = getUserId();
+      await firebaseAddBook(userId, book);
+      events.emit('books:changed');
+    } catch (error) {
+      console.error('[Storage] Error adding book:', error);
+      throw error;
+    }
   },
   async getBooks() {
-    const db = await getDB();
-    return db.getAll('books');
+    try {
+      const userId = getUserId();
+      return await firebaseGetBooks(userId);
+    } catch (error) {
+      console.error('[Storage] Error fetching books:', error);
+      // Return empty array if not logged in
+      return [];
+    }
   },
   async getBook(id) {
-    const db = await getDB();
-    return db.get('books', id);
+    try {
+      const userId = getUserId();
+      return await firebaseGetBook(userId, id);
+    } catch (error) {
+      console.error('[Storage] Error fetching book:', error);
+      return null;
+    }
   },
   async removeBook(id) {
-    console.log('[Storage] removeBook called with id:', id);
-    const db = await getDB();
-    console.log('[Storage] Database connection established');
-    await db.delete('books', id);
-    console.log('[Storage] Book deleted from database');
-    events.emit('books:changed');
-    console.log('[Storage] books:changed event emitted');
+    try {
+      console.log('[Storage] removeBook called with id:', id);
+      const userId = getUserId();
+      await firebaseRemoveBook(userId, id);
+      console.log('[Storage] Book deleted from database');
+      events.emit('books:changed');
+      console.log('[Storage] books:changed event emitted');
+    } catch (error) {
+      console.error('[Storage] Error removing book:', error);
+      throw error;
+    }
   },
   async clear() {
-    const db = await getDB();
-    await db.clear('books');
-    events.emit('books:changed');
+    try {
+      const userId = getUserId();
+      const books = await firebaseGetBooks(userId);
+      // Delete all books one by one
+      for (const book of books) {
+        await firebaseRemoveBook(userId, book.id || book.isbn);
+      }
+      events.emit('books:changed');
+    } catch (error) {
+      console.error('[Storage] Error clearing books:', error);
+      throw error;
+    }
   },
   async cacheSet(key, value, ttl) {
+    // Keep in-memory cache for API responses
     memCache.set(key, { value, ts: Date.now(), ttl });
-    const db = await getDB();
-    await db.put('apiCache', { key, value, ts: Date.now(), ttl });
   },
   async cacheGet(key) {
-    if (memCache.has(key)) return memCache.get(key);
-    const db = await getDB();
-    return db.get('apiCache', key);
+    if (memCache.has(key)) {
+      const cached = memCache.get(key);
+      // Check if cache is still valid
+      if (!cached.ttl || (Date.now() - cached.ts) < cached.ttl) {
+        return cached;
+      }
+      memCache.delete(key);
+    }
+    return null;
   }
 };
 

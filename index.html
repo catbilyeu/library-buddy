@@ -6,16 +6,25 @@
   <title>Library Buddy</title>
   <meta name="theme-color" content="#153328">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="../src/styles/variables.css">
-  <link rel="stylesheet" href="../src/styles/base.css">
-  <link rel="stylesheet" href="../src/styles/theme.css">
-  <link rel="stylesheet" href="../src/styles/components.css">
+  <link rel="stylesheet" href="./src/styles/variables.css">
+  <link rel="stylesheet" href="./src/styles/base.css">
+  <link rel="stylesheet" href="./src/styles/theme.css">
+  <link rel="stylesheet" href="./src/styles/components.css">
 </head>
 <body>
   <div id="app" class="app">
     <header class="hud">
       <h1>Library Buddy</h1>
       <div class="controls">
+        <!-- Auth Section -->
+        <div id="auth-section" class="auth-section">
+          <button id="login-btn" class="auth-btn">🔐 Sign in with Google</button>
+          <div id="user-info" class="user-info hidden">
+            <span id="user-email" class="user-email"></span>
+            <button id="logout-btn" class="auth-btn logout">Sign Out</button>
+          </div>
+        </div>
+
         <button id="toggle-hands-free-btn">Enable Hands Free Mode</button>
         <button id="toggle-cursor-btn" class="icon-btn" aria-label="Toggle Hand Cursor" title="Hand Cursor">✋</button>
         <button id="toggle-voice-btn" class="icon-btn" aria-label="Toggle Voice Commands" title="Voice Commands">🎤</button>
@@ -151,6 +160,44 @@
 
   <div id="magic-cursor" data-test-id="cursor" aria-hidden="true"></div>
 
-  <script type="module" src="../src/js/app.js"></script>
+  <!-- Sign In Welcome Modal -->
+  <dialog id="signin-modal" class="signin-modal">
+    <article class="signin-content">
+      <div class="signin-header">
+        <div class="signin-icon">📚✨</div>
+        <h2 class="signin-title">Welcome to Library Buddy</h2>
+        <p class="signin-subtitle">Your magical personal library awaits</p>
+      </div>
+
+      <div class="signin-features">
+        <div class="feature-item">
+          <span class="feature-icon">📖</span>
+          <span class="feature-text">Track your book collection</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🏷️</span>
+          <span class="feature-text">Organize by series & genre</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🤝</span>
+          <span class="feature-text">Track borrowed books</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🔐</span>
+          <span class="feature-text">Your private library</span>
+        </div>
+      </div>
+
+      <div class="signin-actions">
+        <button id="modal-login-btn" class="signin-primary-btn">
+          <span class="btn-icon">🔐</span>
+          Sign in with Google
+        </button>
+        <p class="signin-note">Your data is securely stored and only visible to you</p>
+      </div>
+    </article>
+  </dialog>
+
+  <script type="module" src="./src/js/app.js"></script>
 </body>
 </html>

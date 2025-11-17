@@ -145,7 +145,7 @@ function onResults(results) {
 
   // Extend range slightly to ensure full screen coverage
   // Map from [0.1, 0.9] to [0, 1] for better edge access
-  const normalizedX = (palmCenter.x - 0.1) / 0.8;
+  const normalizedX = (0.9 - palmCenter.x) / 0.8; // Inverted so cursor follows hand direction
   const normalizedY = (palmCenter.y - 0.1) / 0.8;
 
   const targetX = Math.max(0, Math.min(w, normalizedX * w));

@@ -3,7 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "serve": "npx serve .",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve": "npm run dev",
     "lint": "npx eslint \"src/**/*.js\" --max-warnings=0 || true"
+  },
+  "dependencies": {
+    "firebase": "^12.6.0"
+  },
+  "devDependencies": {
+    "vite": "^7.2.2"
   }
 }
