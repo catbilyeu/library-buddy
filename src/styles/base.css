@@ -178,6 +178,7 @@ p { margin: 0 0 var(--space-3); }
   width: min(600px, 90vw);
   max-height: 85vh;
   overflow-y: auto;
+  position: relative;
 }
 
 #book-modal[open] {

@@ -1,6 +1,6 @@
 /** storage and cache helpers using Firebase Firestore */
 
-import { getCurrentUser, addBook as firebaseAddBook, getBooks as firebaseGetBooks, removeBook as firebaseRemoveBook, getBook as firebaseGetBook } from './firebase.js';
+import { getCurrentUser, addBook as firebaseAddBook, getBooks as firebaseGetBooks, removeBook as firebaseRemoveBook, getBook as firebaseGetBook, updateBook as firebaseUpdateBook } from './firebase.js';
 
 const memCache = new Map();
 
@@ -41,6 +41,16 @@ export const storage = {
     } catch (error) {
       console.error('[Storage] Error fetching book:', error);
       return null;
+    }
+  },
+  async updateBook(id, updates) {
+    try {
+      const userId = getUserId();
+      await firebaseUpdateBook(userId, id, updates);
+      events.emit('books:changed');
+    } catch (error) {
+      console.error('[Storage] Error updating book:', error);
+      throw error;
     }
   },
   async removeBook(id) {

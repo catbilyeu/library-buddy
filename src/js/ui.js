@@ -1,6 +1,7 @@
 /** UI helpers for rendering shelves and modal */
 
-import { getCoverAlternatives } from './api.js';
+import { getCoverAlternatives, searchGoogleBooks, extractVolumeNumber, titleCaseName, primarySeries, normalizeSeriesName, isEditionSeries } from './api.js';
+import { storage } from './storage.js';
 
 const shelves = () => document.querySelector('[data-test-id="shelves"]');
 const modal = () => document.getElementById('book-modal');
@@ -881,4 +882,237 @@ export function closeBookModal() {
       document.body.appendChild(cursor);
     }
   } catch (_) {}
+}
+
+/** Open edit series dialog */
+export async function openEditSeriesDialog() {
+  if (!currentBookId) return;
+
+  const book = await storage.getBook(currentBookId);
+  if (!book) return;
+
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'inline-overlay';
+
+  // Create dialog
+  const dialog = document.createElement('div');
+  dialog.className = 'inline-dialog';
+
+  // Series name input
+  const seriesRow = document.createElement('div');
+  seriesRow.className = 'inline-dialog-row';
+  seriesRow.innerHTML = `
+    <label for="series-name-input">Series Name:</label>
+    <input type="text" id="series-name-input" placeholder="e.g., The Empyrean" value="${book.series || ''}" />
+  `;
+
+  // Series number input
+  const numberRow = document.createElement('div');
+  numberRow.className = 'inline-dialog-row';
+
+  // Try to extract volume number from title if not already set
+  let volumeNumber = book.seriesNumber;
+  if (volumeNumber == null) {
+    const extracted = extractVolumeNumber(book.title);
+    if (extracted != null) volumeNumber = extracted;
+  }
+
+  numberRow.innerHTML = `
+    <label for="series-number-input">Book Number:</label>
+    <input type="number" id="series-number-input" step="0.1" min="0" placeholder="1" value="${volumeNumber || ''}" />
+  `;
+
+  // Actions
+  const actions = document.createElement('div');
+  actions.className = 'inline-dialog-actions';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = () => overlay.remove();
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'primary';
+  saveBtn.textContent = 'Save';
+  saveBtn.onclick = async () => {
+    const seriesInput = document.getElementById('series-name-input');
+    const numberInput = document.getElementById('series-number-input');
+
+    const seriesName = seriesInput.value.trim();
+    const seriesNum = numberInput.value ? parseFloat(numberInput.value) : null;
+
+    // Update book
+    const updates = {
+      ...book,
+      series: seriesName ? titleCaseName(seriesName) : null,
+      seriesNumber: seriesNum
+    };
+
+    await storage.updateBook(currentBookId, updates);
+    overlay.remove();
+
+    // Refresh the modal with updated data
+    const updatedBook = await storage.getBook(currentBookId);
+    if (updatedBook) {
+      openBookModal({
+        id: updatedBook.id || updatedBook.isbn,
+        title: updatedBook.title,
+        author: updatedBook.author,
+        cover: updatedBook.coverUrl,
+        color: updatedBook.spineColor
+      });
+    }
+  };
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(saveBtn);
+
+  // Build dialog
+  const title = document.createElement('h3');
+  title.textContent = 'Edit Series';
+
+  dialog.appendChild(title);
+  dialog.appendChild(seriesRow);
+  dialog.appendChild(numberRow);
+  dialog.appendChild(actions);
+
+  overlay.appendChild(dialog);
+
+  // Append to the book modal so it appears above it
+  const bookModal = document.getElementById('book-modal');
+  if (bookModal) {
+    bookModal.appendChild(overlay);
+  } else {
+    document.body.appendChild(overlay);
+  }
+
+  // Focus series input
+  setTimeout(() => {
+    document.getElementById('series-name-input')?.focus();
+  }, 100);
+
+  // ESC to close
+  overlay.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      overlay.remove();
+    }
+  });
+}
+
+/** Open re-enrich metadata dialog */
+export async function openReenrichDialog() {
+  if (!currentBookId) return;
+
+  const book = await storage.getBook(currentBookId);
+  if (!book) return;
+
+  // Search Google Books
+  const query = book.title ? `intitle:"${book.title}"` : `isbn:${book.isbn || book.id}`;
+  console.log('[UI] Re-enrich search query:', query);
+
+  const results = await searchGoogleBooks(query);
+
+  if (results.length === 0) {
+    alert('No results found. Try editing the series information manually.');
+    return;
+  }
+
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'inline-overlay';
+
+  // Create dialog
+  const dialog = document.createElement('div');
+  dialog.className = 'inline-dialog';
+
+  const title = document.createElement('h3');
+  title.textContent = 'Choose Correct Metadata';
+
+  // Create grid of options
+  const grid = document.createElement('div');
+  grid.className = 'reenrich-grid';
+
+  results.slice(0, 6).forEach((result) => {
+    const option = document.createElement('div');
+    option.className = 'reenrich-option';
+    option.onclick = async () => {
+      // Update book with selected metadata
+      const updates = {
+        ...book,
+        author: result.authors.length > 0 ? result.authors.join(', ') : book.author,
+        coverUrl: result.image || book.coverUrl,
+        series: result.seriesGuess || book.series,
+        seriesNumber: result.seriesNumberGuess != null ? result.seriesNumberGuess : book.seriesNumber
+      };
+
+      await storage.updateBook(currentBookId, updates);
+      overlay.remove();
+
+      // Refresh the modal with updated data
+      const updatedBook = await storage.getBook(currentBookId);
+      if (updatedBook) {
+        openBookModal({
+          id: updatedBook.id || updatedBook.isbn,
+          title: updatedBook.title,
+          author: updatedBook.author,
+          cover: updatedBook.coverUrl,
+          color: updatedBook.spineColor
+        });
+      }
+    };
+
+    // Thumbnail
+    const img = document.createElement('img');
+    img.src = result.image || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg"%3E%3C/svg%3E';
+    img.alt = result.title;
+
+    // Info
+    const info = document.createElement('div');
+    info.className = 'reenrich-option-info';
+
+    const optionTitle = document.createElement('div');
+    optionTitle.className = 'reenrich-option-title';
+    optionTitle.textContent = result.title;
+
+    const optionAuthor = document.createElement('div');
+    optionAuthor.className = 'reenrich-option-author';
+    optionAuthor.textContent = result.authors.join(', ') || 'Unknown Author';
+
+    info.appendChild(optionTitle);
+    info.appendChild(optionAuthor);
+
+    option.appendChild(img);
+    option.appendChild(info);
+    grid.appendChild(option);
+  });
+
+  // Actions
+  const actions = document.createElement('div');
+  actions.className = 'inline-dialog-actions';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = () => overlay.remove();
+  actions.appendChild(cancelBtn);
+
+  dialog.appendChild(title);
+  dialog.appendChild(grid);
+  dialog.appendChild(actions);
+
+  overlay.appendChild(dialog);
+
+  // Append to the book modal so it appears above it
+  const bookModal = document.getElementById('book-modal');
+  if (bookModal) {
+    bookModal.appendChild(overlay);
+  } else {
+    document.body.appendChild(overlay);
+  }
+
+  // ESC to close
+  overlay.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      overlay.remove();
+    }
+  });
 }

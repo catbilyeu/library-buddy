@@ -338,3 +338,108 @@ export function detectSeriesFromTitle(title) {
 
   return { series: null, seriesNumber: null };
 }
+
+/** Normalize series name for sorting/grouping */
+export function normalizeSeriesName(name) {
+  if (!name) return '';
+  let s = String(name).toLowerCase();
+  s = s.replace(/\(\s*series\s*\)/g, ''); // Remove "(series)"
+  s = s.replace(/^(the|a|an)\s+/, ''); // Remove articles
+  s = s.replace(/[#:]|\(|\)|\[|\]|\{|\}|\./g, ' '); // Remove punctuation
+  s = s.replace(/\b(book|bk|vol|volume)\s*\d+[\w\.-]*\b/g, ''); // Remove volume indicators
+  s = s.replace(/\s{2,}/g, ' ').trim();
+  return s;
+}
+
+/** Title case a string (for series names) */
+export function titleCaseName(str) {
+  if (!str) return '';
+  const smallWords = /^(a|an|and|as|at|but|by|en|for|if|in|nor|of|on|or|per|the|to|v.?|vs.?|via)$/i;
+  return str.toLowerCase().split(' ').map((word, index, array) => {
+    if (index !== 0 && index !== array.length - 1 && smallWords.test(word)) {
+      return word;
+    }
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }).join(' ');
+}
+
+/** Check if a series string is actually just an edition/format label */
+export function isEditionSeries(name) {
+  if (!name) return false;
+  const s = String(name).toLowerCase();
+  const keywords = [
+    'paperback', 'hardcover', 'mass market', 'special edition', 'collector',
+    'signed', 'edges', 'painted edges', 'illustrated', 'box set', 'anniversary',
+    'penguin classics', 'vintage international', 'oxford world\'s classics',
+    'modern library', 'barnes & noble classics', 'folio society'
+  ];
+  return keywords.some(k => s.includes(k));
+}
+
+/** Extract volume number from title */
+export function extractVolumeNumber(title) {
+  if (!title) return null;
+
+  // Try "(Series, 1)" pattern
+  const seriesPattern = /\(([^,]+),\s*(\d+(?:\.\d+)?)\)/;
+  const seriesMatch = title.match(seriesPattern);
+  if (seriesMatch) return parseFloat(seriesMatch[2]);
+
+  // Try "Book 1", "Vol 2", "Volume 3" patterns
+  const bookPattern = /\b(?:book|vol\.?|volume)\s+(\d+(?:\.\d+)?)\b/i;
+  const bookMatch = title.match(bookPattern);
+  if (bookMatch) return parseFloat(bookMatch[1]);
+
+  // Try "#1" pattern
+  const hashPattern = /#(\d+(?:\.\d+)?)\b/;
+  const hashMatch = title.match(hashPattern);
+  if (hashMatch) return parseFloat(hashMatch[1]);
+
+  // Try Roman numerals
+  const romanPattern = /\b(?:book|vol\.?|volume)\s+(I{1,3}|IV|V|VI{0,3}|IX|X)\b/i;
+  const romanMatch = title.match(romanPattern);
+  if (romanMatch) {
+    const romanNumerals = { 'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10 };
+    return romanNumerals[romanMatch[1].toUpperCase()] || null;
+  }
+
+  return null;
+}
+
+/** Get primary series from an array of series strings */
+export function primarySeries(seriesArray) {
+  if (!Array.isArray(seriesArray) || seriesArray.length === 0) return '';
+  // Filter out edition labels and return the first valid series
+  const validSeries = seriesArray.filter(s => s && !isEditionSeries(s));
+  return validSeries[0] || '';
+}
+
+/** Search Google Books API for book metadata */
+export async function searchGoogleBooks(query) {
+  try {
+    const q = encodeURIComponent(query || '');
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=8`);
+    if (!response.ok) throw new Error('Google Books search failed');
+
+    const data = await response.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+
+    return items.map(item => {
+      const volumeInfo = item?.volumeInfo || {};
+      const title = volumeInfo.title || '';
+      const seriesDetected = detectSeriesFromTitle(title);
+
+      return {
+        id: item.id,
+        title: title,
+        authors: Array.isArray(volumeInfo.authors) ? volumeInfo.authors : [],
+        image: (volumeInfo.imageLinks?.thumbnail || volumeInfo.imageLinks?.smallThumbnail || '').replace('http://', 'https://'),
+        seriesGuess: seriesDetected.series,
+        seriesNumberGuess: seriesDetected.seriesNumber
+      };
+    });
+  } catch (error) {
+    console.error('[API] Google Books search error:', error);
+    return [];
+  }
+}

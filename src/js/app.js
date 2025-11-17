@@ -4,7 +4,7 @@
 import { initCamera, stopCamera, getFrameImageData, getVideoEl } from './camera.js';
 import { initBarcodeScanner, stopBarcodeScanner, onIsbnDetected, ocrFromFrame } from './scanner.js';
 import { initHands, onCursorMove, onGrab, onOpenHand, onWave, onSwipeUp, destroyHands, setBrowseMode } from './hand.js';
-import { renderBook, openBookModal, closeBookModal, initUI, hydrateBooks, highlightAtCursor, getCurrentBookId, setSortMode, getSortMode, nextPage, prevPage, resetColorTracking, getBookColor } from './ui.js';
+import { renderBook, openBookModal, closeBookModal, initUI, hydrateBooks, highlightAtCursor, getCurrentBookId, setSortMode, getSortMode, nextPage, prevPage, resetColorTracking, getBookColor, openEditSeriesDialog, openReenrichDialog } from './ui.js';
 import { findBookByISBN, searchBookByText, updateBookCover, detectSeriesFromTitle } from './api.js';
 import { storage, events } from './storage.js';
 import { loginWithGoogle, logout, onAuthChange, getCurrentUser } from './firebase.js';
@@ -96,6 +96,8 @@ function setupControls() {
   const modal = document.getElementById('book-modal');
   const closeModalBtn = document.getElementById('close-modal');
   const deleteBtn = document.getElementById('delete-book');
+  const editSeriesBtn = document.getElementById('edit-series-btn');
+  const reenrichBtn = document.getElementById('reenrich-btn');
   const sortFilter = document.getElementById('sort-filter');
   const themeFilterMenu = document.getElementById('theme-filter-menu');
   const menuBtn = document.getElementById('menu-btn');
@@ -108,6 +110,8 @@ function setupControls() {
   toggleVoiceBtn?.addEventListener('click', toggleVoiceCommands);
   closeModalBtn?.addEventListener('click', () => modal.close());
   deleteBtn?.addEventListener('click', handleDeleteBook);
+  editSeriesBtn?.addEventListener('click', openEditSeriesDialog);
+  reenrichBtn?.addEventListener('click', openReenrichDialog);
 
   // Close scanner button
   const closeScannerBtn = document.getElementById('close-scanner-btn');

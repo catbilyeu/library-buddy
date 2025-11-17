@@ -104,4 +104,18 @@ export async function getBook(userId, bookId) {
   }
 }
 
+export async function updateBook(userId, bookId, updates) {
+  try {
+    const bookRef = doc(db, 'users', userId, 'books', bookId);
+    await setDoc(bookRef, {
+      ...updates,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    console.log('[Firebase] Book updated:', bookId);
+  } catch (error) {
+    console.error('[Firebase] Error updating book:', error);
+    throw error;
+  }
+}
+
 export { auth, db };

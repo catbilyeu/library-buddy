@@ -41,6 +41,8 @@ npm run dev
 - 🔤 **OCR Support** - Tesseract.js for title/author detection
 - 🏷️ **Organization** - Sort by series, author, genre, or color
 - 📖 **Library Cards** - Track who borrowed your books and when
+- ✏️ **Edit Series** - Manually edit series name and book number for any book
+- 🔄 **Re-enrich Metadata** - Search Google Books to update author, cover, and series info
 - 🎨 **Multiple Themes** - Witchy, Colorful, Minimal, or Bookshelf
 
 ### Hands-Free Mode
@@ -116,6 +118,13 @@ npm run lint     # Run ESLint
 1. **Scan ISBN**: Click menu → Scan Books → Point camera at barcode
 2. **Manual Entry**: Click menu → Enter ISBN manually
 3. **Import**: Export/Import library as JSON
+
+### Editing Book Metadata
+
+1. **Edit Series**: Click any book → "✏️ Edit Series" → Update series name and book number
+2. **Re-enrich Metadata**: Click any book → "🔄 Re-enrich Metadata" → Choose correct match from Google Books
+   - Updates author, cover image, and series information automatically
+   - Helpful for fixing incorrect metadata or adding missing series info
 
 ### Voice Commands (in Hands-Free Mode)
 

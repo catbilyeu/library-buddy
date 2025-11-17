@@ -61,3 +61,170 @@ button.cursor-hover {
 .isbn-input-group #add-isbn-btn {
   white-space: nowrap;
 }
+
+/* Inline overlay for edit dialogs (series, re-enrich) */
+.inline-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.inline-dialog {
+  background: var(--bg-800);
+  border: 1px solid rgba(200, 164, 82, 0.3);
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 380px;
+  max-width: 600px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.inline-dialog h3 {
+  margin: 0 0 16px 0;
+  color: var(--accent-400);
+  font-size: 1.25rem;
+}
+
+.inline-dialog-row {
+  margin-bottom: 16px;
+}
+
+.inline-dialog-row label {
+  display: block;
+  margin-bottom: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.inline-dialog-row input,
+.inline-dialog-row select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-1);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-100);
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.inline-dialog-row input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.inline-dialog-row input:focus,
+.inline-dialog-row select:focus {
+  outline: 2px solid var(--accent-500);
+  border-color: var(--accent-500);
+}
+
+.inline-dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.inline-dialog-actions button {
+  padding: 10px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-1);
+  background: var(--green-700);
+  color: var(--text-100);
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.inline-dialog-actions button:hover {
+  background: var(--green-800);
+  border-color: var(--accent-400);
+}
+
+.inline-dialog-actions button.primary {
+  background: var(--accent-600);
+  border-color: var(--accent-500);
+}
+
+.inline-dialog-actions button.primary:hover {
+  background: var(--accent-700);
+}
+
+/* Re-enrich chooser grid */
+.reenrich-grid {
+  display: grid;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  margin: 16px 0;
+  padding: 4px;
+}
+
+.reenrich-option {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  align-items: start;
+}
+
+.reenrich-option:hover {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: var(--accent-400);
+  transform: translateX(4px);
+}
+
+.reenrich-option img {
+  width: 48px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.reenrich-option-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reenrich-option-title {
+  font-weight: 600;
+  color: var(--text-100);
+  font-size: 0.95rem;
+}
+
+.reenrich-option-author {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+}
