@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Book cover -->
+  <rect x="20" y="15" width="60" height="70" rx="3" fill="#8bd8bd"/>
+
+  <!-- Book spine shadow -->
+  <rect x="20" y="15" width="8" height="70" rx="3" fill="#6bb89d"/>
+
+  <!-- Pages -->
+  <rect x="28" y="17" width="50" height="66" fill="#f4f1e8"/>
+
+  <!-- Page lines -->
+  <line x1="33" y1="30" x2="70" y2="30" stroke="#c8a452" stroke-width="1.5" opacity="0.6"/>
+  <line x1="33" y1="40" x2="70" y2="40" stroke="#c8a452" stroke-width="1.5" opacity="0.6"/>
+  <line x1="33" y1="50" x2="70" y2="50" stroke="#c8a452" stroke-width="1.5" opacity="0.6"/>
+  <line x1="33" y1="60" x2="70" y2="60" stroke="#c8a452" stroke-width="1.5" opacity="0.6"/>
+  <line x1="33" y1="70" x2="65" y2="70" stroke="#c8a452" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- Decorative star/sparkle -->
+  <circle cx="50" cy="50" r="12" fill="#c8a452" opacity="0.3"/>
+  <path d="M50 40 L52 48 L60 50 L52 52 L50 60 L48 52 L40 50 L48 48 Z" fill="#c8a452"/>
+</svg>

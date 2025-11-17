@@ -209,7 +209,11 @@ function setupControls() {
 
   // Handle hamburger menu toggle
   menuBtn?.addEventListener('click', () => {
-    settingsMenu?.classList.remove('hidden');
+    // Only allow menu to open if user is authenticated
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      settingsMenu?.classList.remove('hidden');
+    }
   });
 
   closeMenuBtn?.addEventListener('click', () => {
@@ -1582,6 +1586,7 @@ function updateAuthUI(user) {
   const userInfo = document.getElementById('user-info');
   const userEmail = document.getElementById('user-email');
   const signinModal = document.getElementById('signin-modal');
+  const settingsMenu = document.getElementById('settings-menu');
 
   if (user) {
     // User is logged in
@@ -1600,6 +1605,11 @@ function updateAuthUI(user) {
     loginBtn?.classList.remove('hidden');
     userInfo?.classList.add('hidden');
 
+    // Close settings menu if open
+    if (settingsMenu && !settingsMenu.classList.contains('hidden')) {
+      settingsMenu.classList.add('hidden');
+    }
+
     // Show sign-in modal
     if (signinModal && !signinModal.open) {
       signinModal.showModal();
@@ -1612,6 +1622,21 @@ async function boot() {
   initUI();
   setupControls();
   setupEvents();
+
+  // Show sign-in modal immediately if not authenticated
+  const signinModal = document.getElementById('signin-modal');
+  const settingsMenu = document.getElementById('settings-menu');
+  const currentUser = getCurrentUser();
+
+  if (!currentUser) {
+    // Close menu and show sign-in modal
+    if (settingsMenu) {
+      settingsMenu.classList.add('hidden');
+    }
+    if (signinModal) {
+      signinModal.showModal();
+    }
+  }
 
   // Set up authentication state listener
   onAuthChange(async (user) => {
